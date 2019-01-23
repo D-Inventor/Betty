@@ -54,3 +54,5 @@ ALWAYS KEEP YOUR TOKEN PRIVATE! otherwise, everyone can get access to your bot a
 	Currently, you can only see the first event on the agenda and only cancel an event by mentioning the title.
 	Ideally, the bot hosts a small website which gives a pretty overview of the event agenda.
 - update to latest dotnet core environment
+- write log messages to logfile.
+	Currently, log messages are sent to the console and piped to /dev/null on the rpi. log files should not exceed 20MB and old log files should be deleted when new log files are created.
