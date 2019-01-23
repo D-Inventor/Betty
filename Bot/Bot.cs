@@ -129,12 +129,10 @@ namespace Betty
 				await analysis.AnalyseTime(context);
 			}
 		}
-
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+		
 		private async Task Client_Ready()
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 		{
-			
+			await client.SetGameAsync(@"https://github.com/D-Inventor/Betty");
 		}
 		
 		private Task Client_GuildAvailable(SocketGuild guild)
