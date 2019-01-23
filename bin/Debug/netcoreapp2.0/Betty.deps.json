@@ -1,14 +1,15 @@
 {
   "runtimeTarget": {
     "name": ".NETCoreApp,Version=v2.0",
-    "signature": "482410a97e44fd7514acff4df980253a074b31a8"
+    "signature": "edc32a80eb1de7ad411ed0c1bdb99f259403cc59"
   },
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v2.0": {
       "Betty/1.0.0": {
         "dependencies": {
-          "Discord.Net": "2.0.1"
+          "Discord.Net": "2.0.1",
+          "TimeZoneConverter": "2.5.1"
         },
         "runtime": {
           "Betty.dll": {}
@@ -216,6 +217,14 @@
           "Microsoft.NETCore.Targets": "1.1.0",
           "System.Runtime": "4.3.0"
         }
+      },
+      "TimeZoneConverter/2.5.1": {
+        "runtime": {
+          "lib/netstandard2.0/TimeZoneConverter.dll": {
+            "assemblyVersion": "2.5.1.0",
+            "fileVersion": "2.5.1.0"
+          }
+        }
       }
     }
   },
@@ -399,6 +408,13 @@
       "sha512": "sha512-LbSxKEdOUhVe8BezB/9uOGGppt+nZf6e1VFyw6v3DN6lqitm0OSn2uXMOdtP0M3W4iMcqcivm2J6UgqiwwnXiA==",
       "path": "system.threading.tasks/4.3.0",
       "hashPath": "system.threading.tasks.4.3.0.nupkg.sha512"
+    },
+    "TimeZoneConverter/2.5.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-yCzMXkEanV9rgJWMLdiS/REkN3YxtUc6Eq6O7AlWAftSG+INMwn1DT2RLKkJ9sok+JH+LsCurUnvkl83AGBlfw==",
+      "path": "timezoneconverter/2.5.1",
+      "hashPath": "timezoneconverter.2.5.1.nupkg.sha512"
     }
   }
 }

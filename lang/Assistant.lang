@@ -1,0 +1,76 @@
+﻿scan.time.found              = "Let me translate that time for you, {nickname}."
+                             | "No need to thank me, {nickname}."
+						     
+command.time.error           = "{error}"
+command.time.notimezone      = "I have no idea where you're from, {nickname}. Assign yourself a timezone first."
+						     | "{nickname}, if you want to use that command, I need to know your timezone!"
+						     | "Show me your timezone {nickname} and I'll show you mine :kissing_heart:"
+						     
+command.plan.error           = "{error}"
+command.plan.empty           = "I'll need more than that, {nickname}."
+						     | "I'm sorry {nickname}, I can't read your mind yet."
+command.plan.notimezone      = "{command.time.notimezone}"
+command.plan.past		     = "That date is in the past, silly!"
+command.plan.success		 = "I put [title] on [date] in the agenda {nickname}."
+
+command.cancel.empty		 = "{command.plan.empty}"
+command.cancel.notplanned	 = "That appointment is not in the agenda {nickname}."
+command.cancel.success		 = "I've removed [title] from the agenda {nickname}."
+
+command.appstart.empty       = "{command.plan.empty}"
+command.appstart.isactive	 = "We've already started the applications {nickname}."
+command.appstart.error		 = "{error}"
+command.appstart.notimezone  = "{command.time.notimezone}"
+command.appstart.success	 = "I've started the applications {nickname}: [url]"
+							 | "I've made some arrangements for you {nickname}: [url]"
+command.appstart.past		 = "{command.plan.past}"
+
+command.appstop.success		 = "All done and dusted {nickname}."
+
+command.event.empty			 = "There are no events on the agenda currently {nickname}."
+							 | "The agenda is completely empty {nickname}."
+command.event.present		 = "[title] is first on the agenda on [date]."
+						     
+command.mod.error            = "{error}"
+						     
+command.ping                 = "{greet} {nickname}"
+						     
+command.set.notification     = "{confirm}"
+command.unset.notification   = "{confirm}"
+
+command.set.public           = "{confirm}"
+command.unset.public         = "{confirm}"
+						     
+command.set.timezones.wait   = "{wait}"
+command.set.timezones.done   = "I've added all the timezones to the list {nickname}."
+command.unset.timezones.wait = "{wait}"
+command.unset.timezones.done = "All the timezones are removed from the list {nickname}."
+
+notifications.timeleft		 = "There's only [time] left before [title] starts!"
+							 | "[title] is starting soon! Make sure you're there in [time]!"
+
+notifications.deadline		 = "[title] is starting now!"
+
+event.join                   = "{greet} [mention], welcome {discord}!"
+                             | "Welcome {discord} [mention]!"
+						     
+confirm					     = "I got you {nickname}."
+                             | "I'll remember that {nickname}."
+						     | "Anything for you {nickname}."
+						     
+discord                      = "to our discord"
+						     
+error					     = "I have no idea what you're talking about, {nickname}."
+                             | "I don't understand that, {nickname}."
+						     
+greet                        = "Hi" | "Hello"
+						     
+nickname				     = "honey"
+						     | "dear"
+						     | "sweetheart"
+						     | "darling"
+						     
+present					     = "Here you go, {nickname}."
+						     | "This is for you, {nickname}."
+
+wait						 = "Anything for you {nickname}, just give me a minute."

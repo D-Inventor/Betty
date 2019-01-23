@@ -1,12 +1,24 @@
-﻿using System;
+﻿using System.Threading.Tasks;
+using System.Globalization;
+using System;
 
-namespace betty
+namespace Betty
 {
-    class Program
+	class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello Internet of Things!");
+			// entry point of the application
+			CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+			new Program().MainAsync().GetAwaiter().GetResult();
         }
-    }
+
+		private async Task MainAsync()
+		{
+			// create and run the bot
+			Bot bot = new Bot();
+			await bot.Init();
+			await bot.Start();
+		}
+	}
 }

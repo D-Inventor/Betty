@@ -11,4 +11,13 @@
     <PackageReference Include="TimeZoneConverter" Version="2.5.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="config\Config.conf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="lang\Assistant.lang">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

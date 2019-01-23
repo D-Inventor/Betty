@@ -6,3 +6,8 @@ C:\Users\Dennis\Documents\Code\Persoonlijk\Visual Studio\Betty\obj\Debug\netcore
 C:\Users\Dennis\Documents\Code\Persoonlijk\Visual Studio\Betty\obj\Debug\netcoreapp2.0\Betty.csproj.CoreCompileInputs.cache
 C:\Users\Dennis\Documents\Code\Persoonlijk\Visual Studio\Betty\obj\Debug\netcoreapp2.0\Betty.AssemblyInfoInputs.cache
 C:\Users\Dennis\Documents\Code\Persoonlijk\Visual Studio\Betty\obj\Debug\netcoreapp2.0\Betty.AssemblyInfo.cs
+C:\Users\Dennis\Documents\Code\Persoonlijk\Visual Studio\Betty\bin\Debug\netcoreapp2.0\Betty.pdb
+C:\Users\Dennis\Documents\Code\Persoonlijk\Visual Studio\Betty\obj\Debug\netcoreapp2.0\Betty.dll
+C:\Users\Dennis\Documents\Code\Persoonlijk\Visual Studio\Betty\obj\Debug\netcoreapp2.0\Betty.pdb
+C:\Users\Dennis\Documents\Code\Persoonlijk\Visual Studio\Betty\bin\Debug\netcoreapp2.0\config\Config.conf
+C:\Users\Dennis\Documents\Code\Persoonlijk\Visual Studio\Betty\bin\Debug\netcoreapp2.0\lang\Assistant.lang
