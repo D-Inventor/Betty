@@ -37,8 +37,8 @@ This project depends on:
 
 # Note before use
 To run this bot on a raspberry pi, you need to have dotnet 2.0 installed on it. To build and deploy this bot to the rpi, you need to edit the `build.cake` file so that it contains the details of your rpi.
-The bot depends on configurations in a file under `config/Config.conf`, which is not included in this repository.
-This configuration file contains the loglevel and your personal token so that your bot can connect to your servers. ALWAYS KEEP THIS TOKEN PRIVATE!
+Before the bot can be used, it needs to know your private token. This token needs to be pasted into the config file behind `TOKEN:`.
+ALWAYS KEEP YOUR TOKEN PRIVATE! otherwise, everyone can get access to your bot and potentially ruin your servers.
 
 # TODO
 - save agenda to filesystem and restore agenda on reboot.
