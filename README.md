@@ -4,14 +4,14 @@ Betty is my personal bot assistant on Discord. Betty is timezone aware and conta
 # Features
 Betty is a discord bot designed as an aid for international gaming communities. As such, Betty has the following features:
 - generation of responses, based on language files.
-    Betty can interpret language files into a dictionary. She generates random messages based on a given start keyword
+	Betty can interpret language files into a dictionary. She generates random messages based on a given start keyword
 - conversion of times between timezones.
-    Betty can read the timezone from the user and convert the given time from his/her local time to UTC.
+	Betty can read the timezone from the user and convert the given time from his/her local time to UTC.
 	- using the command `$time [12 hour time]`, Betty will translate the given time from user's local time to the time in all relevant timezones.
 	- any 12 hour time, prefixed with a '$', will be interpreted and translated by Betty.
 	These commands require the timezones to be initialised and require the user to have assigned themselves the role for their timezone.
 - planning of events.
-    Betty keeps an internal agenda with all planned events. The corresponding guild will receive notifications before and at the start of every given event.
+	Betty keeps an internal agenda with all planned events. The corresponding guild will receive notifications before and at the start of every given event.
 	- using the command `$plan [DD:MM:YYYY] [12 hour time] [title of the event]`, users can add an event to the agenda.
 	- using the command `$event`, Betty returns a message with the date and time of the first coming event.
 	- using the command `$cancel [title of the event]`, users can cancel the first coming event with given title. This title needs to match 100%
@@ -36,6 +36,9 @@ This project depends on:
 - timezoneconverter: An OS independent library for reliable timezone conversion and naming.
 
 # Note before use
+To run this bot on a raspberry pi, you need to have dotnet 2.0 installed on it. To build and deploy this bot to the rpi, you need to edit the `build.cake` file so that it contains the details of your rpi.
+The bot depends on configurations in a file under `config/Config.conf`, which is not included in this repository.
+This configuration file contains the loglevel and your personal token so that your bot can connect to your servers. ALWAYS KEEP THIS TOKEN PRIVATE!
 
 # TODO
 - save agenda to filesystem and restore agenda on reboot.
