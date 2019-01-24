@@ -24,7 +24,7 @@ namespace Betty
 			string guilddir = constants.PathToGuilds();
 			if (!Directory.Exists(guilddir)) Directory.CreateDirectory(guilddir);
 
-			GuildData guilddata = GuildData.FromFile(guild, constants);
+			GuildData guilddata = GuildData.FromFile(guild, services);
 
 			// load the guild from a file
 			guildCollection.Add(guild.Id, guilddata);

@@ -25,8 +25,9 @@ namespace Betty
 		private DateTime? deadline;
 
 		Constants constants;
+		Logger logger;
 
-		private GuildData(ulong id, ulong? public_channel, ulong? notification_channel, bool appactive, ulong? application_channel, string invite, DateTime? deadline, StringConverter language, Constants constants)
+		private GuildData(ulong id, ulong? public_channel, ulong? notification_channel, bool appactive, ulong? application_channel, string invite, DateTime? deadline, StringConverter language, IServiceProvider services)
 		{
 			this.id = id;
 			this.public_channel = public_channel;
@@ -42,25 +43,29 @@ namespace Betty
 			application_channel = null;
 			invite = null;
 
-			this.constants = constants;
+			this.constants = services.GetService<Constants>();
+			this.logger = services.GetService<Logger>();
 		}
 
-		private static GuildData GetDefault(SocketGuild guild, Constants constants)
+		private static GuildData GetDefault(SocketGuild guild, IServiceProvider services)
 		{
-			StringConverter sc = StringConverter.LoadFromFile(constants.PathToLanguage(constants.DefaultLanguage));
+			var constants = services.GetService<Constants>();
+			StringConverter sc = StringConverter.LoadFromFile(constants.PathToLanguage(constants.DefaultLanguage), services.GetService<Logger>());
 
-			return new GuildData(guild.Id, null, null, false, null, null, null, sc, constants);
+			return new GuildData(guild.Id, null, null, false, null, null, null, sc, services);
 		}
 
-		public static GuildData FromFile(SocketGuild guild, Constants constants)
+		public static GuildData FromFile(SocketGuild guild, IServiceProvider services)
 		{
+			var constants = services.GetService<Constants>();
+			var logger = services.GetService<Logger>();
 			string guildpath = constants.PathToGuild(guild.Id);
 
 			// make sure that the file exists or create a new default
 			if (!File.Exists(guildpath))
 			{
-				Console.WriteLine($"{guild.Name} doesn't have a configuration yet. Creating a new one.");
-				GuildData data = GetDefault(guild, constants);
+				logger.Log(new LogMessage(LogSeverity.Info, "GuildDataLoader", $"{guild.Name} doesn't have a configuration yet. Creating a new one."));
+				GuildData data = GetDefault(guild, services);
 				data.Save();
 				return data;
 			}
@@ -75,7 +80,7 @@ namespace Betty
 					int separator = line.IndexOf(':');
 					if (separator < 0)
 					{
-						Console.WriteLine($"BAD OPTION: {line}");
+						logger.Log(new LogMessage(LogSeverity.Warning, "GuildDataLoader", $"Couldn't interpret option: {line}"));
 						continue;
 					}
 					string key = line.Substring(0, separator);
@@ -86,7 +91,7 @@ namespace Betty
 			}
 			
 			// parse entries into objects
-			StringConverter sc = StringConverter.LoadFromFile(constants.PathToLanguage(entries.ContainsKey("LANG") ? entries["LANG"] : constants.DefaultLanguage));
+			StringConverter sc = StringConverter.LoadFromFile(constants.PathToLanguage(entries.ContainsKey("LANG") ? entries["LANG"] : constants.DefaultLanguage), logger);
 			ulong? public_channel = null;
 			if (entries.ContainsKey("PUBCHANNEL") && entries["PUBCHANNEL"] != "null") public_channel = ulong.Parse(entries["PUBCHANNEL"]);
 			ulong? notification_channel = null;
@@ -108,12 +113,12 @@ namespace Betty
 				// if the application data is corrupt/ incorrect, pretend as if it doesn't exist
 				if(application_channel == null || invite == null || deadline == null)
 				{
-					Console.WriteLine("Application data appears to be invalid and gets discarded");
+					logger.Log(new LogMessage(LogSeverity.Warning, "GuildDataLoader", $"Application data for '{guild.Name}' is invalid, ignoring."));
 					appactive = false;
 				}
 			}
 
-			return new GuildData(guild.Id, public_channel, notification_channel, appactive, application_channel, invite, deadline, sc, constants);
+			return new GuildData(guild.Id, public_channel, notification_channel, appactive, application_channel, invite, deadline, sc, services);
 		}
 
 		public void Save()

@@ -7,6 +7,7 @@ using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Discord;
 using Discord.WebSocket;
 
 namespace Betty
@@ -16,6 +17,7 @@ namespace Betty
 		Constants constants;
 		Settings settings;
 		DateTimeUtils datetimeutils;
+		Logger logger;
 
 		List<Event> eventcollection;
 
@@ -24,13 +26,14 @@ namespace Betty
 			constants = services.GetRequiredService<Constants>();
 			settings = services.GetRequiredService<Settings>();
 			datetimeutils = services.GetRequiredService<DateTimeUtils>();
+			logger = services.GetRequiredService<Logger>();
 
 			eventcollection = new List<Event>();
 		}
 
 		public void Plan(SocketGuild guild, string title, DateTime date, Action action = null, bool donotifications = true, TimeSpan[] notifications = null, ulong? channelid = null, bool savetoharddrive = true)
 		{
-			Event e = new Event(guild, title, date, notifications == null ? constants.EventNotifications : notifications, settings, datetimeutils, donotifications, channelid);
+			Event e = new Event(guild, title, date, notifications == null ? constants.EventNotifications : notifications, settings, datetimeutils, logger, donotifications, channelid);
 			lock (eventcollection)
 			{
 				eventcollection.Add(e);
@@ -80,9 +83,10 @@ namespace Betty
 
 			Settings settings;
 			DateTimeUtils datetimeutils;
+			Logger logger;
 
 
-			public Event(SocketGuild guild, string title, DateTime date, TimeSpan[] notifications, Settings settings, DateTimeUtils datetimeutils, bool donotifications = true,  ulong? channelid = null)
+			public Event(SocketGuild guild, string title, DateTime date, TimeSpan[] notifications, Settings settings, DateTimeUtils datetimeutils, Logger logger, bool donotifications = true,  ulong? channelid = null)
 			{
 				this.guild = guild;
 				this.title = title;
@@ -95,6 +99,7 @@ namespace Betty
 
 				this.settings = settings;
 				this.datetimeutils = datetimeutils;
+				this.logger = logger;
 				tokensource = new CancellationTokenSource();
 			}
 
@@ -122,7 +127,7 @@ namespace Betty
 																											.Add("time", datetimeutils.TimeSpanToString(n))
 																											.Add("title", title)));
 							}
-							catch (Exception e) { Console.WriteLine(e.Message); }
+							catch (Exception e) { logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", e.Message, e)); }
 						}
 					}
 				}
@@ -141,7 +146,7 @@ namespace Betty
 						action?.Invoke();
 					}
 				}
-				catch (Exception e) { Console.WriteLine(e.Message); }
+				catch (Exception e) { logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", e.Message, e)); }
 			}
 
 			private async Task Notify(string message)

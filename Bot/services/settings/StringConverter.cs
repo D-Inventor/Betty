@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-using Microsoft.Extensions.DependencyInjection;
+using Discord;
 
 namespace Betty
 {
@@ -26,7 +26,7 @@ namespace Betty
 		}
 
 		// load a language from a file
-		public static StringConverter LoadFromFile(string path)
+		public static StringConverter LoadFromFile(string path, Logger logger)
 		{
 			Dictionary<string, Sentence[]> translations = new Dictionary<string, Sentence[]>();
 
@@ -53,7 +53,7 @@ namespace Betty
 			}
 			else
 			{
-				Console.WriteLine($"Error: Couldn't find language file: {path}");
+				logger.Log(new LogMessage(LogSeverity.Warning, "StringConverter", $"Couldn't find given language file: {path}"));
 			}
 
 			return new StringConverter(Path.GetFileNameWithoutExtension(path), translations);

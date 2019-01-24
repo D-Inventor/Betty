@@ -12,12 +12,16 @@ namespace Betty
 {
 	public partial class Settings
 	{
+		IServiceProvider services;
 		Constants constants;
+		Logger logger;
 
 		public Settings(IServiceProvider services)
 		{
 			// take reference to relevant services and create a new collection for guilds
+			this.services = services;
 			constants = services.GetRequiredService<Constants>();
+			logger = services.GetRequiredService<Logger>();
 			guildCollection = new Dictionary<ulong, GuildData>();
 		}
 
@@ -37,7 +41,7 @@ namespace Betty
 			// make sure that config file exists
 			if (!File.Exists(path))
 			{
-				Console.WriteLine($"Could not find config file.");
+				logger.Log(new LogMessage(LogSeverity.Error, "Settings", "Couldn't find configuration file"));
 				return configs;
 			}
 
@@ -51,7 +55,7 @@ namespace Betty
 					int separator = line.IndexOf(':');
 					if(separator < 0)
 					{
-						Console.WriteLine($"BAD OPTION: {line}");
+						logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Couldn't interpret option: {line}"));
 						continue;
 					}
 					string key = line.Substring(0, separator);
@@ -91,7 +95,7 @@ namespace Betty
 					LogLevel = LogSeverity.Warning;
 					break;
 				default:
-					Console.WriteLine($"Unknown loglevel: {loglevelstring}");
+					logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Unknown log level: {loglevelstring}"));
 					LogLevel = LogSeverity.Debug;
 					break;
 			}
