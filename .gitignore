@@ -1,14 +1,6 @@
-bin/Debug/netcoreapp2.0/
 config/Config.conf
 publish/
 tools/
-bin/Release/netcoreapp2.0/
-bin/lang/Assistant.lang
-bin/config/Config.conf
-bin/betty.runtimeconfig.json
-bin/betty.runtimeconfig.dev.json
-bin/betty.pdb
-bin/betty.dll
-bin/betty.deps.json
+bin/
 .vs/
 obj/
