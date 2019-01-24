@@ -39,20 +39,3 @@ This project depends on:
 To run this bot on a raspberry pi, you need to have dotnet 2.0 installed on it. To build and deploy this bot to the rpi, you need to edit the `build.cake` file so that it contains the details of your rpi.
 Before the bot can be used, it needs to know your private token. This token needs to be pasted into the config file behind `TOKEN:`.
 ALWAYS KEEP YOUR TOKEN PRIVATE! otherwise, everyone can get access to your bot and potentially ruin your servers.
-
-# TODO
-- save agenda to filesystem and restore agenda on reboot.
-	Betty can plan an event and give notifications, but forgets all appointments when she restarts.
-- add configurable security layers for better command control.
-	Server owners should at least be able to select roles for 3 security layers.
-	Ideally the server owner can specify by him/herself how many security layers there are, and which commands can be executed by each layer.
-	Potentially use preset files to provide starting point for security layer definitions.
-- add more customisation for notifications.
-	Currently, the notification times are hardcoded and cannot be changed. Ideally, the user should be able to specify at which times, a notification should be sent for a given event.
-- improve regular expression for event recognision, such that the separator doesn't necessarily has to be ':' as long as it's consistent.
-- improve control over events.
-	Currently, you can only see the first event on the agenda and only cancel an event by mentioning the title.
-	Ideally, the bot hosts a small website which gives a pretty overview of the event agenda.
-- update to latest dotnet core environment
-- write log messages to logfile.
-	Currently, log messages are sent to the console and piped to /dev/null on the rpi. log files should not exceed 20MB and old log files should be deleted when new log files are created.
