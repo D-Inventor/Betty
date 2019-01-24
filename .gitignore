@@ -13,3 +13,4 @@ bin/betty.runtimeconfig.dev.json
 bin/betty.pdb
 bin/betty.dll
 bin/betty.deps.json
+.vs/
