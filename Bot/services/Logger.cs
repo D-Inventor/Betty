@@ -70,7 +70,7 @@ namespace Betty
 				string path = Directory.GetFiles(constants.PathToLogs()).Max(x => File.GetCreationTimeUtc(x));
 
 				// open log file at given path if present and smaller than 20MB or create a new log file
-				using (StreamWriter sw = new StreamWriter((path == null || new FileInfo(path).Length > 20 * 1024) ? Path.Combine(logpath, $"{DateTime.UtcNow:yyyyMMdd_HHmmss}.log") : path, true))
+				using (StreamWriter sw = new StreamWriter((path == null || new FileInfo(path).Length > constants.MaxLogSize) ? Path.Combine(logpath, $"{DateTime.UtcNow:yyyyMMdd_HHmmss}.log") : path, true))
 				{
 					// write all entries to the log file
 					while (logQueue.TryDequeue(out string msg))
@@ -82,7 +82,7 @@ namespace Betty
 
 				// make sure that there are not more than 2 logfiles in the folder
 				string[] files = Directory.GetFiles(logpath);
-				if (files.Length > 2)
+				if (files.Length > constants.MaxLogs)
 				{
 					File.Delete(files.Min(x => File.GetCreationTimeUtc(x)));
 				}

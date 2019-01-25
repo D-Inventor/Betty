@@ -32,5 +32,8 @@ namespace Betty
 		public readonly TimeSpan[] ApplicationNotifications = new TimeSpan[] { new TimeSpan(5, 0, 0), new TimeSpan(0, 30, 0) };
 
 		public GuildPermissions RolePermissions { get; } = new GuildPermissions(changeNickname: true, useVoiceActivation: true);
+
+		public int MaxLogSize { get; } = 20 * 1024;
+		public int MaxLogs { get; } = 2;
 	}
 }
