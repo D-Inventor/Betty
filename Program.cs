@@ -17,8 +17,9 @@ namespace Betty
 		{
 			// create and run the bot
 			Bot bot = new Bot();
-			await bot.Init();
-			await bot.Start();
+			if(await bot.Init())
+				await bot.Start();
+			bot.Dispose();
 		}
 	}
 }

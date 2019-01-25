@@ -17,6 +17,8 @@ namespace Betty
 
 		ConcurrentQueue<string> logQueue;
 		ManualResetEventSlim loggingFlag;
+		ManualResetEventSlim DisposeReady;
+		bool DisposeFlag = false;
 
 		public Logger(IServiceProvider services)
 		{
@@ -24,24 +26,34 @@ namespace Betty
 
 			logQueue = new ConcurrentQueue<string>();
 			loggingFlag = new ManualResetEventSlim(false);
+			DisposeReady = new ManualResetEventSlim(false);
 		}
 
-		public void Start()
+		public void Init()
 		{
 			// start the logging process
 			Task.Run((Action)LoggerProcess);
+			return;
 		}
 
 		public void Log(LogMessage msg)
 		{
-			logQueue.Enqueue($"[{DateTime.UtcNow}] {msg.Source}: {msg.Message}");
+			logQueue.Enqueue($"[{DateTime.UtcNow}] [{msg.Severity.ToString().PadRight(8)}] {msg.Source}: {msg.Message}");
 			loggingFlag.Set();
+		}
+
+		public void Dispose()
+		{
+			DisposeFlag = true;
+			loggingFlag.Set();
+
+			DisposeReady.Wait();
 		}
 
 		private void LoggerProcess()
 		{
 			// keep logging forever
-			while (true)
+			while (!DisposeFlag)
 			{
 				// wait until a signal for flushing has been given, but only if the queue is currently empty.
 				if (logQueue.Count == 0)
@@ -78,6 +90,8 @@ namespace Betty
 				// make sure that the logging flag is no longer set to prevent unnecessary work
 				loggingFlag.Reset();
 			}
+
+			DisposeReady.Set();
 		}
 	}
 }

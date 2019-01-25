@@ -53,7 +53,7 @@ namespace Betty
 			}
 			else
 			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "StringConverter", $"Couldn't find given language file: {path}"));
+				logger.Log(new LogMessage(LogSeverity.Warning, "StringConverter", $"Couldn't find language file at: {path}"));
 			}
 
 			return new StringConverter(Path.GetFileNameWithoutExtension(path), translations);

@@ -39,13 +39,17 @@ namespace Betty
 			logger = services.GetService<Logger>();
 		}
 
-		public async Task Init()
+		public async Task<bool> Init()
 		{
 			// initiate logger process
-			logger.Start();
+			logger.Init();
 
 			// read settings from the file system
-			settings.Init();
+			if (!settings.Init())
+			{
+				logger.Log(new LogMessage(LogSeverity.Error, "Bot", $"Initialisation of configurations failed"));
+				return false;
+			}
 
 			// create discord objects
 			client = new DiscordSocketClient(new DiscordSocketConfig
@@ -63,6 +67,8 @@ namespace Betty
 
 			// subscribe to all relevant events
 			SetupEventSubscriptions();
+
+			return true;
 		}
 
 		private void SetupEventSubscriptions()
@@ -82,6 +88,11 @@ namespace Betty
 
 			// keep the bot running forever
 			await Task.Delay(-1);
+		}
+
+		public void Dispose()
+		{
+			logger.Dispose();
 		}
 
 		public IServiceProvider BuildServiceProvider() => new ServiceCollection()

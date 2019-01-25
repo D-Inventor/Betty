@@ -25,83 +25,122 @@ namespace Betty
 			guildCollection = new Dictionary<ulong, GuildData>();
 		}
 
-		public void Init()
+		public bool Init()
 		{
 			// initialise settings with configurations from the filesystem
 			string configpath = constants.PathToConfig();
-			var config = GetConfiguration(configpath);
-			SetEnvironment(config);
+			if (!GetConfiguration(configpath, out Configurations config))
+				return false;
+
+			return SetEnvironment(config);
 		}
 
-		private Configurations GetConfiguration(string path)
+		private bool GetConfiguration(string path, out Configurations configs)
 		{
 			// read all global configurations from the filesystem
-			Configurations configs = new Configurations();
+			configs = new Configurations();
 
 			// make sure that config file exists
 			if (!File.Exists(path))
 			{
-				logger.Log(new LogMessage(LogSeverity.Error, "Settings", "Couldn't find configuration file"));
-				return configs;
+				// write to log if no settings exist and create a template settings file
+				logger.Log(new LogMessage(LogSeverity.Error, "Settings", $"Looked for configuration file at '{path}', but couldn't find it."));
+
+				try
+				{
+					using (StreamWriter sw = new StreamWriter(path))
+					{
+						sw.WriteLine("TOKEN:your_private_token");
+						sw.WriteLine("LOGLEVEL:WARNING");
+					}
+				}
+				catch (Exception e)
+				{
+					logger.Log(new LogMessage(LogSeverity.Error, "Settings", $"Attempted to make template settings at '{path}', but failed: {e.Message}", e));
+				}
+
+				return false;
 			}
 
 			// open the file
-			using (var file = new StreamReader(path))
+			try
 			{
-				string line;
-				while ((line = file.ReadLine()) != null)
+				using (var file = new StreamReader(path))
 				{
-					// for each line, extract the key and value and store in the dictionary
-					int separator = line.IndexOf(':');
-					if(separator < 0)
+					string line;
+					while ((line = file.ReadLine()) != null)
 					{
-						logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Couldn't interpret option: {line}"));
-						continue;
+						// for each line, extract the key and value and store in the dictionary
+						int separator = line.IndexOf(':');
+						if (separator < 0)
+						{
+							logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Read line '{line}', but could not interpret."));
+							continue;
+						}
+						string key = line.Substring(0, separator);
+						separator++;
+						string value = line.Substring(separator, line.Length - separator);
+						configs.Add(key, value);
 					}
-					string key = line.Substring(0, separator);
-					separator++;
-					string value = line.Substring(separator, line.Length - separator);
-					configs.Add(key, value);
 				}
 			}
+			catch(Exception e)
+			{
+				logger.Log(new LogMessage(LogSeverity.Error, "Settings", $"Attempted to read configuration file, but failed: {e.Message}", e));
+				return false;
+			}
 
-			return configs;
+			return true;
 		}
 
-		private void SetEnvironment(Configurations config)
+		private bool SetEnvironment(Configurations config)
 		{
 			// take the configurations and assign variables accordingly
 
 			// read loglevel
-			string loglevelstring = config.ContainsKey("LOGLEVEL") ? config["LOGLEVEL"] : "Debug";
-			switch (loglevelstring.ToUpper())
+			if (!config.ContainsKey("LOGLEVEL"))
 			{
-				case "CRITICAL":
-					LogLevel = LogSeverity.Critical;
-					break;
-				case "DEBUG":
-					LogLevel = LogSeverity.Debug;
-					break;
-				case "ERROR":
-					LogLevel = LogSeverity.Error;
-					break;
-				case "INFO":
-					LogLevel = LogSeverity.Info;
-					break;
-				case "VERBOSE":
-					LogLevel = LogSeverity.Verbose;
-					break;
-				case "WARNING":
-					LogLevel = LogSeverity.Warning;
-					break;
-				default:
-					logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Unknown log level: {loglevelstring}"));
-					LogLevel = LogSeverity.Debug;
-					break;
+				logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Missing configuration for 'LOGLEVEL'."));
+				LogLevel = LogSeverity.Warning;
+			}
+			else
+			{
+				string loglevelstring = config["LOGLEVEL"];
+				switch (loglevelstring.ToUpper())
+				{
+					case "CRITICAL":
+						LogLevel = LogSeverity.Critical;
+						break;
+					case "DEBUG":
+						LogLevel = LogSeverity.Debug;
+						break;
+					case "ERROR":
+						LogLevel = LogSeverity.Error;
+						break;
+					case "INFO":
+						LogLevel = LogSeverity.Info;
+						break;
+					case "VERBOSE":
+						LogLevel = LogSeverity.Verbose;
+						break;
+					case "WARNING":
+						LogLevel = LogSeverity.Warning;
+						break;
+					default:
+						logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"The value for 'LOGLEVEL' is missing or incorrect: '{loglevelstring}'"));
+						LogLevel = LogSeverity.Warning;
+						break;
+				}
 			}
 
 			// read token
-			Token = config.ContainsKey("TOKEN") ? config["TOKEN"] : "";
+			if (!config.ContainsKey("TOKEN"))
+			{
+				logger.Log(new LogMessage(LogSeverity.Error, "Settings", $"Missing configuration for 'TOKEN'."));
+				return false;
+			}
+			Token = config["TOKEN"];
+			return true;
 		}
 
 		public string Token { get; private set; }
