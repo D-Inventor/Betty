@@ -38,7 +38,7 @@ namespace Betty
 
 		public void Log(LogMessage msg)
 		{
-			logQueue.Enqueue($"[{DateTime.UtcNow}] [{msg.Severity.ToString().PadRight(8)}] {msg.Source}: {msg.Message}");
+			logQueue.Enqueue($"[{DateTime.UtcNow}] [{msg.Severity.ToString().PadRight(8)}] {msg.Source.PadLeft(10)}: {msg.Message}");
 			loggingFlag.Set();
 		}
 

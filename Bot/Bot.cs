@@ -82,8 +82,18 @@ namespace Betty
 
 		public async Task Start()
 		{
-			// login and start
-			await client.LoginAsync(TokenType.Bot, settings.Token);
+			// try to login
+			try
+			{
+				await client.LoginAsync(TokenType.Bot, settings.Token);
+			}
+			catch(Discord.Net.HttpException e)
+			{
+				logger.Log(new LogMessage(LogSeverity.Error, "Bot", $"Attempted to log in, but failed: {e.Reason}", e));
+				return;
+			}
+
+			// start
 			await client.StartAsync();
 
 			// keep the bot running forever
