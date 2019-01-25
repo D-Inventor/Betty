@@ -64,7 +64,7 @@ namespace Betty
 			// make sure that the file exists or create a new default
 			if (!File.Exists(guildpath))
 			{
-				logger.Log(new LogMessage(LogSeverity.Info, "GuildDataLoader", $"{guild.Name} doesn't have a configuration yet. Creating a new one."));
+				logger.Log(new LogMessage(LogSeverity.Info, "Settings", $"{guild.Name} doesn't have a configuration yet. Creating a new one."));
 				GuildData data = GetDefault(guild, services);
 				data.Save();
 				return data;
@@ -80,7 +80,7 @@ namespace Betty
 					int separator = line.IndexOf(':');
 					if (separator < 0)
 					{
-						logger.Log(new LogMessage(LogSeverity.Warning, "GuildDataLoader", $"Couldn't interpret option: {line}"));
+						logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Couldn't interpret option: {line}"));
 						continue;
 					}
 					string key = line.Substring(0, separator);
@@ -113,7 +113,7 @@ namespace Betty
 				// if the application data is corrupt/ incorrect, pretend as if it doesn't exist
 				if(application_channel == null || invite == null || deadline == null)
 				{
-					logger.Log(new LogMessage(LogSeverity.Warning, "GuildDataLoader", $"Application data for '{guild.Name}' is invalid, ignoring."));
+					logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Application data for '{guild.Name}' is invalid, ignoring."));
 					appactive = false;
 				}
 			}

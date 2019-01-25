@@ -39,3 +39,11 @@ This project depends on:
 To run this bot on a raspberry pi, you need to have dotnet 2.0 installed on it. To build and deploy this bot to the rpi, you need to edit the `build.cake` file so that it contains the details of your rpi.
 Before the bot can be used, it needs to know your private token. This token needs to be pasted into the config file behind `TOKEN:`.
 ALWAYS KEEP YOUR TOKEN PRIVATE! otherwise, everyone can get access to your bot and potentially ruin your servers.
+
+
+
+Get the latest Cake build.ps1 by opening a powershell script, change the working directory to this one, and run:
+
+Invoke-WebRequest http://cakebuild.net/download/bootstrapper/windows -OutFile build.ps1
+
+Now open the build.cake file, and replace the placeholders with values for your Raspberry Pi's IP address, the destination directory, and the username you use to log into your Pi.
