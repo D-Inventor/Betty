@@ -140,8 +140,7 @@ namespace Betty
 			// make sure that the message is valid and from a valid source
 			if (context.Message == null || context.Message.Content == "") return;
 			if (context.User.IsBot) return;
-
-#warning TODO: Create security layers per guild.
+			
 			// make sure that only users who are member can use the bot
 			if (!(context.User as SocketGuildUser).Roles.Select(r => r.Name).Contains("Member")) return;
 
@@ -153,7 +152,7 @@ namespace Betty
 				var result = await commands.ExecuteAsync(context, argPos, services);
 				if (!result.IsSuccess)
 				{
-					logger.Log(new LogMessage(LogSeverity.Warning, "Commands", result.ErrorReason));
+					logger.Log(new LogMessage(LogSeverity.Warning, "Commands", $"Attempted to execute command '{message.Content}', but failed: {result.ErrorReason}"));
 				}
 			}
 			else
