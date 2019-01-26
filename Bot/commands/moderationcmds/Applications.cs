@@ -58,7 +58,7 @@ namespace Betty.commands
 
 			// creation must succeed
 			IInviteMetadata invite = await settings.StartApplication(Context.Guild, utcdeadline);
-			if (invite != null)
+			if (invite == null)
 			{
 				await Context.Channel.SendMessageAsync(language.GetString("command.appstart.error"));
 				return;
