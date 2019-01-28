@@ -24,11 +24,12 @@ Betty is a discord bot designed as an aid for international gaming communities. 
 			The roles that this bot creates allow the user to define their local time for the bot.
 			(*) Windows timezones are timezones as defined in the Microsoft Windows OS registry.
 	- using the `$unset [option]` command, the user can deconfigure given option.
-	- using the `$appstart [DD:MM:YYYY] [12 hour time]` command, the user can start applications for the server of execution.
-		This command creates an application text channel in the same category as the public channel and will therefore inherit the same privileges.
-		This command will create an invite link to this application channel and will delete the invite as soon as the deadline expires or the application is cancelled.
-	- using the `$appstop` command, the user can stop applications.
-		This command will delete the application channel and delete the invite link.
+	- using the `$app [option]` command, the user can control applications.
+		- `start [DD:MM:YYYY] [12 hour time]` lets the user start applications for the server of execution.
+			This command creates an application text channel in the same category as the public channel and will therefore inherit the same privileges.
+			This command will create an invite link to this application channel and will delete the invite as soon as the deadline expires or the application is cancelled.
+		- `stop` lets the user stop applications.
+			This command will delete the application channel and delete the invite link.
 
 # Dependencies
 This project depends on:
