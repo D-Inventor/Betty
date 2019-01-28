@@ -43,10 +43,11 @@ namespace Betty
 			return result;
 		}
 
-		public ulong? GetPublicChannel(SocketGuild guild)
+		public SocketTextChannel GetPublicChannel(SocketGuild guild)
 		{
 			// return public channel of given guild.
-			return GetGuildData(guild).PublicChannel;
+			ulong? pc = GetGuildData(guild).PublicChannel;
+			return pc == null ? null : guild.GetTextChannel(pc.Value);
 		}
 
 		public void SetPublicChannel(SocketGuild guild, ulong? channel)
@@ -55,10 +56,11 @@ namespace Betty
 			GetGuildData(guild).PublicChannel = channel;
 		}
 
-		public ulong? GetNotificationChannel(SocketGuild guild)
+		public SocketTextChannel GetNotificationChannel(SocketGuild guild)
 		{
 			// return notification channel for given guild.
-			return GetGuildData(guild).NotificationChannel;
+			ulong? nc = GetGuildData(guild).NotificationChannel;
+			return nc == null ? null : guild.GetTextChannel(nc.Value);
 		}
 
 		public void SetNotificationChannel(SocketGuild guild, ulong? channel)
@@ -67,11 +69,10 @@ namespace Betty
 			GetGuildData(guild).NotificationChannel = channel;
 		}
 
-		public ulong? GetNotificationElsePublic(SocketGuild guild)
+		public SocketTextChannel GetNotificationElsePublic(SocketGuild guild)
 		{
 			// return notification channel if present, or public channel otherwise.
-			GuildData guildData = GetGuildData(guild);
-			return guildData.NotificationChannel.HasValue ? guildData.NotificationChannel : guildData.PublicChannel;
+			return GetNotificationChannel(guild) ?? GetPublicChannel(guild);
 		}
 
 		public StringConverter GetLanguage(SocketGuild guild)
@@ -86,20 +87,25 @@ namespace Betty
 			return GetGuildData(guild).AppActive;
 		}
 
-		public ulong? GetApplicationChannel(SocketGuild guild)
+		public SocketTextChannel GetApplicationChannel(SocketGuild guild)
 		{
 			var guilddata = GetGuildData(guild);
-			return guilddata.AppActive ? guilddata.ApplicationChannel : null;
+			if (!guilddata.AppActive) return null;
+
+			ulong? ac = guilddata.ApplicationChannel;
+			return ac.HasValue ? guild.GetTextChannel(ac.Value) : null;
 		}
 
 		public async Task<IInviteMetadata> GetApplicationInvite(SocketGuild guild)
 		{
 			string invite = GetGuildData(guild).Invite;
-			ulong? channelid = GetApplicationChannel(guild);
 
-			if (!channelid.HasValue) return null;
-
-			var channel = guild.GetTextChannel(channelid.Value);
+			var channel = GetApplicationChannel(guild);
+			if(channel == null)
+			{
+				logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Attempted to get invite on {guild.Name}, but failed: channel was null"));
+				return null;
+			}
 			return (await channel.GetInvitesAsync()).FirstOrDefault(x => x.Id == invite);
 		}
 

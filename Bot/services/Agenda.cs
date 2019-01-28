@@ -31,7 +31,7 @@ namespace Betty
 			eventcollection = new List<Event>();
 		}
 
-		public void Plan(SocketGuild guild, string title, DateTime date, Action action = null, bool donotifications = true, TimeSpan[] notifications = null, ulong? channelid = null, bool savetoharddrive = true)
+		public void Plan(SocketGuild guild, string title, DateTime date, Action action = null, bool donotifications = true, TimeSpan[] notifications = null, SocketTextChannel channelid = null, bool savetoharddrive = true)
 		{
 			Event e = new Event(guild, title, date, notifications == null ? constants.EventNotifications : notifications, settings, datetimeutils, logger, donotifications, channelid);
 			lock (eventcollection)
@@ -77,7 +77,7 @@ namespace Betty
 			string title;
 			DateTime date;
 			bool donotifications;
-			ulong? channelid;
+			SocketTextChannel channelid;
 			TimeSpan[] notifications;
 			CancellationTokenSource tokensource;
 
@@ -86,7 +86,7 @@ namespace Betty
 			Logger logger;
 
 
-			public Event(SocketGuild guild, string title, DateTime date, TimeSpan[] notifications, Settings settings, DateTimeUtils datetimeutils, Logger logger, bool donotifications = true,  ulong? channelid = null)
+			public Event(SocketGuild guild, string title, DateTime date, TimeSpan[] notifications, Settings settings, DateTimeUtils datetimeutils, Logger logger, bool donotifications = true,  SocketTextChannel channelid = null)
 			{
 				this.guild = guild;
 				this.title = title;
@@ -151,13 +151,10 @@ namespace Betty
 
 			private async Task Notify(string message)
 			{
-				ulong? id = channelid ?? settings.GetNotificationElsePublic(guild);
-				if (!id.HasValue) return;
-
 				// send notification to desired channel
-				SocketTextChannel channel = guild.GetTextChannel(id.Value);
-				await channel.TriggerTypingAsync();
-				await channel.SendMessageAsync(message);
+				SocketTextChannel channel = channelid ?? settings.GetNotificationElsePublic(guild);
+				await channel?.TriggerTypingAsync();
+				await channel?.SendMessageAsync(message);
 			}
 
 			public SocketGuild Guild { get { return guild; } }
