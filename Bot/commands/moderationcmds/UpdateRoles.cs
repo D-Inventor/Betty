@@ -18,7 +18,7 @@ namespace Betty.commands
 		{
 			await Context.Channel.TriggerTypingAsync();
 			await Context.Channel.SendMessageAsync("Updating the roles to the latest settings");
-			foreach(var r in Context.Guild.Roles.Where(x => services.GetService<DateTimeUtils>().IsTimezone(x.Name)))
+			foreach(var r in Context.Guild.Roles.Where(x => datetimeutils.IsTimezone(x.Name)))
 			{
 				await r.ModifyAsync(x =>
 				{

@@ -25,6 +25,7 @@ command.appstart.success	 = "I've started the applications {nickname}: [url]"
 							 | "I've made some arrangements for you {nickname}: [url]"
 command.appstart.past		 = "{command.plan.past}"
 
+command.appstop.noapp		 = "There are currently no applications {nickname}."
 command.appstop.success		 = "All done and dusted {nickname}."
 
 command.event.empty			 = "There are no events on the agenda currently {nickname}."
