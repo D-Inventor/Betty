@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
-
-using Microsoft.Extensions.DependencyInjection;
 
 using Discord;
 using Discord.WebSocket;
@@ -137,17 +133,35 @@ namespace Betty
 				}
 			}
 
-			// create an application channel under given category
-			ITextChannel appchannel = await guild.CreateTextChannelAsync("applications", x =>
+			ITextChannel appchannel;
+			try
 			{
-				if(category != null) x.CategoryId = category.Id;
-				x.Topic = "If you're interested in our community: Write an application here!";
-			});
+				// create an application channel under given category
+				appchannel = await guild.CreateTextChannelAsync("applications", x =>
+				{
+					if (category != null) x.CategoryId = category.Id;
+					x.Topic = "If you're interested in our community: Write an application here!";
+				});
+			}
+			catch(Exception e)
+			{
+				logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Attempted to create application channel in '{guild.Name}', but failed: {e.Message}", e));
+				return null;
+			}
 
 			ulong appchannelid = appchannel.Id;
-			
-			// create an invite link to the public channel or the application channel
-			IInviteMetadata invite = await appchannel.CreateInviteAsync(maxAge: null);
+
+			IInviteMetadata invite;
+			try
+			{
+				// create an invite link to the public channel or the application channel
+				invite = await appchannel.CreateInviteAsync(maxAge: null);
+			}
+			catch(Exception e)
+			{
+				logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Attempted to create invite in '{guild.Name}', but failed: {e.Message}", e));
+				return null;
+			}
 
 			guilddata.SetApplication(true, appchannelid, invite.Id, deadline);
 			return invite;
@@ -162,7 +176,14 @@ namespace Betty
 			if (appchannelid.HasValue)
 			{
 				var appchannel = guild.GetTextChannel(appchannelid.Value);
-				await appchannel.DeleteAsync();
+				try
+				{
+					await appchannel.DeleteAsync();
+				}
+				catch(Exception e)
+				{
+					logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Attempted to delete application channel in '{guild.Name}', but failed: {e.Message}", e));
+				}
 			}
 
 			// update guild data

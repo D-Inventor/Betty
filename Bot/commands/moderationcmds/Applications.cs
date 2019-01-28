@@ -20,12 +20,14 @@ namespace Betty.commands
 			Settings settings;
 			Agenda agenda;
 			DateTimeUtils datetimeutils;
+			Logger logger;
 
 			public Applications(IServiceProvider services)
 			{
 				settings = services.GetService<Settings>();
 				agenda = services.GetService<Agenda>();
 				datetimeutils = services.GetService<DateTimeUtils>();
+				logger = services.GetService<Logger>();
 			}
 
 			[Command("start"), Alias("begin"), Summary("Starts an application session by creating an invite url and an applications channel")]
@@ -87,8 +89,15 @@ namespace Betty.commands
 
 			private async Task ExpireAppLink(SocketGuild guild)
 			{
-				var invite = await settings.GetApplicationInvite(guild);
-				await invite?.DeleteAsync();
+				try
+				{
+					var invite = await settings.GetApplicationInvite(guild);
+					await invite?.DeleteAsync();
+				}
+				catch(Exception e)
+				{
+					logger.Log(new LogMessage(LogSeverity.Warning, "Commands", $"Attempted to delete invitation in '{guild.Name}', but failed: {e.Message}", e));
+				}
 			}
 
 			[Command("stop"), Alias("end"), Summary("Stops an application session by destroying the invite url and the applications channel")]
