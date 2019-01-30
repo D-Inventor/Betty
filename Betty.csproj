@@ -17,13 +17,16 @@
     <None Update="config\Config.conf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="data\databases\guild.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="lang\Assistant.lang">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Bot\services\databases\" />
+    <Folder Include="data\databases\" />
   </ItemGroup>
 
 </Project>
