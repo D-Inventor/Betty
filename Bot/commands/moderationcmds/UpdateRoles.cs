@@ -1,12 +1,5 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System.Linq;
-using System.Collections.Generic;
-using System.Text;
-
-using Microsoft.Extensions.DependencyInjection;
-
-using Discord;
 using Discord.Commands;
 
 namespace Betty.commands

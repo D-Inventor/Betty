@@ -33,7 +33,7 @@ namespace Betty
 
 		public void Plan(SocketGuild guild, string title, DateTime date, Action action = null, bool donotifications = true, TimeSpan[] notifications = null, SocketTextChannel channelid = null, bool savetoharddrive = true)
 		{
-			Event e = new Event(guild, title, date, notifications == null ? constants.EventNotifications : notifications, settings, datetimeutils, logger, donotifications, channelid);
+			Event e = new Event(guild, title, date, notifications ?? constants.EventNotifications, settings, datetimeutils, logger, donotifications, channelid);
 			lock (eventcollection)
 			{
 				eventcollection.Add(e);
