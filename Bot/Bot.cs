@@ -12,6 +12,9 @@ using Discord.WebSocket;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Betty.databases.guilds;
+using Betty.utilities;
+
 namespace Betty
 {
 	public class Bot
@@ -27,16 +30,20 @@ namespace Betty
 		Agenda agenda;
 		Constants constants;
 		Logger logger;
+		StateCollection statecollection;
+		GuildDB database;
 
 		public Bot()
 		{
 			// set up services and store reference to services that are relevant for this class
-			services = BuildServiceProvider();
-			settings = services.GetService<Settings>();
-			analysis = services.GetService<Analysis>();
-			agenda = services.GetService<Agenda>();
-			constants = services.GetService<Constants>();
-			logger = services.GetService<Logger>();
+			services		= BuildServiceProvider();
+			settings		= services.GetService<Settings>();
+			agenda			= services.GetService<Agenda>();
+			constants		= services.GetService<Constants>();
+			logger			= services.GetService<Logger>();
+			statecollection = services.GetService<StateCollection>();
+			database		= services.GetService<GuildDB>();
+			analysis = new Analysis(services);
 		}
 
 		public async Task<bool> Init()
@@ -107,27 +114,23 @@ namespace Betty
 
 		public IServiceProvider BuildServiceProvider() => new ServiceCollection()
 			.AddSingleton<Constants>()
-			.AddSingleton<DateTimeUtils>()
+			.AddDbContext<GuildDB>()
+			.AddSingleton(x => new Logger(x))
+			.AddSingleton(x => new StateCollection(x))
 			.AddSingleton(x => new Settings(x))
 			.AddSingleton(x => new Agenda(x))
-			.AddSingleton(x => new Analysis(x))
-			.AddSingleton(x => new Logger(x))
 			.BuildServiceProvider();
 
 		private async Task Client_UserJoined(SocketGuildUser user)
 		{
-			// get configurations for given guild.
-			GuildData gd = settings.GetGuildData(user.Guild);
-			ulong? channel = gd.PublicChannel;
-			if (!channel.HasValue) return;
-
-			// if a public channel has been configured, send a welcome message to that channel
-			var sc = user.Guild.GetTextChannel(channel.Value);
+			var sc = statecollection.GetPublicChannel(user.Guild);
+			if (sc == null) return;
 
 			await Task.Delay(10000);
 			await sc.TriggerTypingAsync();
 			await Task.Delay(3000);
-			await sc.SendMessageAsync(gd.Language.GetString("event.join", new SentenceContext()
+			var language = statecollection.GetLanguage(user.Guild);
+			await sc.SendMessageAsync(language.GetString("event.join", new SentenceContext()
 																			.Add("mention", user.Mention)));
 		}
 
@@ -167,18 +170,47 @@ namespace Betty
 			await client.SetGameAsync(@"https://github.com/D-Inventor/Betty");
 		}
 		
-		private Task Client_GuildAvailable(SocketGuild guild)
+		private async Task Client_GuildAvailable(SocketGuild guild)
 		{
-			// check if this guild has started applications and plan an event accordingly.
-			if (settings.GetApplicationActive(guild) && settings.GetApplicationDeadline(guild).Value > DateTime.UtcNow)
+			var dbresult = from app in database.Applications
+						   where app.GuildID == guild.Id
+						   select app;
+
+			// test if there were any applications for this guild
+			if (dbresult.Any())
 			{
-				agenda.Plan(guild, "Application selection", settings.GetApplicationDeadline(guild).Value, channelid: settings.GetApplicationChannel(guild), notifications: constants.ApplicationNotifications, savetoharddrive: false, action: async () =>
+				ApplicationTB app = dbresult.First();
+
+				// test if the deadline for this application has passed
+				if (app.Deadline < DateTime.UtcNow + new TimeSpan(0, 0, 30))
 				{
-					await (await settings.GetApplicationInvite(guild))?.DeleteAsync();
-				});
+					//cancel the applications
+				}
+				else
+				{
+					// try to get the channel for applications
+					SocketTextChannel channel;
+					try
+					{
+						channel = guild.GetTextChannel(app.Channel);
+					}
+					catch(Exception e)
+					{
+						logger.Log(new LogMessage(LogSeverity.Warning, "Bot", $"Attempted to load application channel in {guild.Name}, but failed: {e.Message}", e));
+						return;
+					}
+
+					IInviteMetadata invite = await statecollection.GetInviteByID(channel, app.InviteID);
+					if (invite == null) return;
+
+					agenda.Plan(guild, "Application selection", app.Deadline, channel: channel, notifications: constants.ApplicationNotifications, savetoharddrive: false, action: async () =>
+					{
+						await invite.DeleteAsync();
+					});
+				}
 			}
 
-			return Task.CompletedTask;
+			return;
 		}
 
 		private Task Client_Log(LogMessage msg)

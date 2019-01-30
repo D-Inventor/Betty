@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Betty.utilities;
 
 namespace Betty.commands
 {
@@ -17,13 +18,11 @@ namespace Betty.commands
 		[Group("unset"), Summary("unsets a given settings")]
 		public class Unset : ModuleBase<SocketCommandContext>
 		{
-			Settings settings;
-			DateTimeUtils datetimeutils;
+			StateCollection statecollection;
 			Constants constants;
 			public Unset(IServiceProvider services)
 			{
-				this.settings = services.GetService<Settings>();
-				this.datetimeutils = services.GetService<DateTimeUtils>();
+				this.statecollection = services.GetService<StateCollection>();
 				this.constants = services.GetService<Constants>();
 			}
 
@@ -31,25 +30,25 @@ namespace Betty.commands
 			public async Task unset_public([Remainder]string input = null)
 			{
 				await Context.Channel.TriggerTypingAsync();
-				settings.SetPublicChannel(Context.Guild, null);
+				statecollection.SetPublicChannel(Context.Guild, null);
 
-				await Context.Channel.SendMessageAsync(settings.GetLanguage(Context.Guild).GetString("command.unset.public"));
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.unset.public"));
 			}
 
 			[Command("notification"), Alias("notifications"), Summary("Sets the notification channel to null")]
 			public async Task unset_notification([Remainder]string input = null)
 			{
 				await Context.Channel.TriggerTypingAsync();
-				settings.SetNotificationChannel(Context.Guild, null);
+				statecollection.SetNotificationChannel(Context.Guild, null);
 
-				await Context.Channel.SendMessageAsync(settings.GetLanguage(Context.Guild).GetString("command.unset.notification"));
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.unset.notification"));
 			}
 
 			[Command("timezones"), Alias("timezone"), Summary("Removes all the roles for performing time queries")]
 			public async Task unset_timezones([Remainder]string input = null)
 			{
 				await Context.Channel.TriggerTypingAsync();
-				await Context.Channel.SendMessageAsync(settings.GetLanguage(Context.Guild).GetString("command.unset.timezones.wait"));
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.unset.timezones.wait"));
 
 				// find all the current roles in the guild
 				IEnumerable<KeyValuePair<string, ulong>> roles = Context.Guild.Roles.Select(r => new KeyValuePair<string, ulong>(r.Name, r.Id));
@@ -57,14 +56,14 @@ namespace Betty.commands
 				// delete all the roles that are timezones
 				foreach (var t in roles)
 				{
-					if (datetimeutils.IsTimezone(t.Key))
+					if (DateTimeMethods.IsTimezone(t.Key))
 					{
 						await Context.Guild.GetRole(t.Value).DeleteAsync();
 					}
 				}
 
 				await Context.Channel.TriggerTypingAsync();
-				await Context.Channel.SendMessageAsync(settings.GetLanguage(Context.Guild).GetString("command.unset.timezones.done"));
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.unset.timezones.done"));
 			}
 		}
 	}

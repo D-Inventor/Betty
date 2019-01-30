@@ -9,14 +9,12 @@ namespace Betty.commands
 	public partial class DateConvert : ModuleBase<SocketCommandContext>
 	{
 		public IServiceProvider services { get; set; }
-		Settings settings;
-		DateTimeUtils datetimeutils;
+		StateCollection statecollection;
 
 		public DateConvert(IServiceProvider services)
 		{
 			this.services = services;
-			this.settings = services.GetService<Settings>();
-			datetimeutils = services.GetService<DateTimeUtils>();
+			this.statecollection = services.GetService<StateCollection>();
 		}
 	}
 }

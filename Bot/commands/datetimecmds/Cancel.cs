@@ -9,6 +9,8 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
+using Betty.utilities;
+
 namespace Betty.commands
 {
 	public partial class DateConvert
@@ -18,7 +20,7 @@ namespace Betty.commands
 		{
 			await Context.Channel.TriggerTypingAsync();
 
-			var language = settings.GetLanguage(Context.Guild);
+			var language = statecollection.GetLanguage(Context.Guild);
 
 			if (input == null)
 			{

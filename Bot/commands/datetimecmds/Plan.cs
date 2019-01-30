@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Discord.Commands;
 
+using Betty.utilities;
+
 namespace Betty.commands
 {
 	public partial class DateConvert
@@ -15,10 +17,10 @@ namespace Betty.commands
 		{
 			await Context.Channel.TriggerTypingAsync();
 
-			var language = settings.GetLanguage(Context.Guild);
+			var language = statecollection.GetLanguage(Context.Guild);
 
 			//make sure that user has a timezone assigned
-			TimeZoneInfo timezone = services.GetService<DateTimeUtils>().UserToTimezone(Context.User);
+			TimeZoneInfo timezone = DateTimeMethods.UserToTimezone(Context.User);
 			if (timezone == null)
 			{
 				await Context.Channel.SendMessageAsync(language.GetString("command.time.notimezone"));
@@ -35,7 +37,7 @@ namespace Betty.commands
 			// make sure that a valid datetime has been provided
 			DateTime? date;
 			string title;
-			services.GetService<DateTimeUtils>().StringToAppointment(input, out date, out title);
+			DateTimeMethods.StringToAppointment(input, out date, out title);
 			if (!date.HasValue)
 			{
 				await Context.Channel.SendMessageAsync(language.GetString("command.plan.error"));

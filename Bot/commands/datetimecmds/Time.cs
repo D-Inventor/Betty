@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-
+using Betty.utilities;
 using Discord.Commands;
 
 namespace Betty.commands
@@ -12,20 +12,20 @@ namespace Betty.commands
 		{
 			// indicate that the bot is working on the command
 			await Context.Channel.TriggerTypingAsync();
-			StringConverter language = settings.GetLanguage(Context.Guild);
+			StringConverter language = statecollection.GetLanguage(Context.Guild);
 
 			// get the desired timezone
 			TimeZoneInfo sourcetz = null;
 			foreach (var tz in Context.Message.MentionedRoles)
 			{
-				if (datetimeutils.IsTimezone(tz.Name))
+				if (DateTimeMethods.IsTimezone(tz.Name))
 				{
-					sourcetz = datetimeutils.IDToTimezone(tz.Name);
+					sourcetz = DateTimeMethods.IDToTimezone(tz.Name);
 					break;
 				}
 			}
 
-			if (sourcetz == null) sourcetz = datetimeutils.UserToTimezone(Context.User);
+			if (sourcetz == null) sourcetz = DateTimeMethods.UserToTimezone(Context.User);
 			if (sourcetz == null)
 			{
 				await Context.Channel.SendMessageAsync(language.GetString("command.time.notimezone"));
@@ -36,7 +36,7 @@ namespace Betty.commands
 			DateTime time = TimeZoneInfo.ConvertTime(DateTime.Now, sourcetz);
 			if (input != null)
 			{
-				TimeSpan? ts = datetimeutils.StringToTime(input, true);
+				TimeSpan? ts = DateTimeMethods.StringToTime(input, true);
 				if (!ts.HasValue)
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.time.error"));
@@ -45,7 +45,7 @@ namespace Betty.commands
 				time = new DateTime(time.Year, time.Month, time.Day, 0, 0, 0, time.Kind) + ts.Value;
 			}
 
-			string result = datetimeutils.TimetableToString(datetimeutils.LocalTimeToTimetable(time, sourcetz, Context.Guild));
+			string result = DateTimeMethods.TimetableToString(DateTimeMethods.LocalTimeToTimetable(time, sourcetz, Context.Guild));
 			await Context.Channel.SendMessageAsync(language.GetString("present"));
 
 			await Context.Channel.TriggerTypingAsync();

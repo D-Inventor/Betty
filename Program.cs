@@ -12,7 +12,7 @@ namespace Betty
         static void Main(string[] args)
         {
 			// test if the database functions properly
-			TestDatabase();
+			//TestDatabase();
 
 			// entry point of the application
 			CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;

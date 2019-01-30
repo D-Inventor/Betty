@@ -15,11 +15,9 @@ namespace Betty.commands
 	public partial class Moderation : ModuleBase<SocketCommandContext>
 	{
 		Constants constants;
-		DateTimeUtils datetimeutils;
 
 		public Moderation(IServiceProvider services)
 		{
-			datetimeutils = services.GetService<DateTimeUtils>();
 			constants = services.GetService<Constants>();
 		}
 	}

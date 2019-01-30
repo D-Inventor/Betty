@@ -3,20 +3,19 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using Discord;
 using Discord.WebSocket;
+using Betty.utilities;
 
 namespace Betty
 {
 	class Agenda
 	{
 		Constants constants;
-		Settings settings;
-		DateTimeUtils datetimeutils;
+		StateCollection statecollection;
 		Logger logger;
 
 		List<Event> eventcollection;
@@ -24,16 +23,15 @@ namespace Betty
 		public Agenda(IServiceProvider services)
 		{
 			constants = services.GetRequiredService<Constants>();
-			settings = services.GetRequiredService<Settings>();
-			datetimeutils = services.GetRequiredService<DateTimeUtils>();
+			statecollection = services.GetRequiredService<StateCollection>();
 			logger = services.GetRequiredService<Logger>();
 
 			eventcollection = new List<Event>();
 		}
 
-		public void Plan(SocketGuild guild, string title, DateTime date, Action action = null, bool donotifications = true, TimeSpan[] notifications = null, SocketTextChannel channelid = null, bool savetoharddrive = true)
+		public void Plan(SocketGuild guild, string title, DateTime date, Action action = null, bool donotifications = true, TimeSpan[] notifications = null, SocketTextChannel channel = null, bool savetoharddrive = true)
 		{
-			Event e = new Event(guild, title, date, notifications ?? constants.EventNotifications, settings, datetimeutils, logger, donotifications, channelid);
+			Event e = new Event(guild, title, date, notifications ?? constants.EventNotifications, statecollection, logger, donotifications, channel);
 			lock (eventcollection)
 			{
 				eventcollection.Add(e);
@@ -66,11 +64,6 @@ namespace Betty
 			return eventcollection.Where(x => x.Guild.Id == guild.Id).OrderBy(x => x.Date).Select(x => new ValueTuple<string, DateTime>(x.Title, x.Date));
 		}
 
-
-
-
-
-
 		private class Event
 		{
 			SocketGuild guild;
@@ -81,12 +74,11 @@ namespace Betty
 			TimeSpan[] notifications;
 			CancellationTokenSource tokensource;
 
-			Settings settings;
-			DateTimeUtils datetimeutils;
+			StateCollection statecollection;
 			Logger logger;
 
 
-			public Event(SocketGuild guild, string title, DateTime date, TimeSpan[] notifications, Settings settings, DateTimeUtils datetimeutils, Logger logger, bool donotifications = true,  SocketTextChannel channelid = null)
+			public Event(SocketGuild guild, string title, DateTime date, TimeSpan[] notifications, StateCollection statecollection, Logger logger, bool donotifications = true,  SocketTextChannel channelid = null)
 			{
 				this.guild = guild;
 				this.title = title;
@@ -97,8 +89,7 @@ namespace Betty
 				Array.Sort(this.notifications);
 				Array.Reverse(this.notifications);
 
-				this.settings = settings;
-				this.datetimeutils = datetimeutils;
+				this.statecollection = statecollection;
 				this.logger = logger;
 				tokensource = new CancellationTokenSource();
 			}
@@ -121,10 +112,10 @@ namespace Betty
 						{
 							try
 							{
-								await datetimeutils.WaitForDate(date - n, token);
+								await DateTimeMethods.WaitForDate(date - n, token);
 								if(!token.IsCancellationRequested)
-									await Notify(settings.GetLanguage(guild).GetString("notifications.timeleft", new SentenceContext()
-																											.Add("time", datetimeutils.TimeSpanToString(n))
+									await Notify(statecollection.GetLanguage(guild).GetString("notifications.timeleft", new SentenceContext()
+																											.Add("time", DateTimeMethods.TimeSpanToString(n))
 																											.Add("title", title)));
 							}
 							catch (Exception e) { logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", e.Message, e)); }
@@ -135,12 +126,12 @@ namespace Betty
 				// and on the deadline
 				try
 				{
-					await datetimeutils.WaitForDate(date, token);
+					await DateTimeMethods.WaitForDate(date, token);
 					if (!token.IsCancellationRequested)
 					{
 						if (donotifications)
 						{
-							await Notify(settings.GetLanguage(guild).GetString("notifications.deadline", new SentenceContext()
+							await Notify(statecollection.GetLanguage(guild).GetString("notifications.deadline", new SentenceContext()
 																											.Add("title", title)));
 						}
 						action?.Invoke();
@@ -152,7 +143,7 @@ namespace Betty
 			private async Task Notify(string message)
 			{
 				// send notification to desired channel
-				SocketTextChannel channel = channelid ?? settings.GetNotificationElsePublic(guild);
+				SocketTextChannel channel = channelid ?? statecollection.GetNotificationElsePublic(guild);
 				await channel?.TriggerTypingAsync();
 				await channel?.SendMessageAsync(message);
 			}

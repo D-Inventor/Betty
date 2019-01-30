@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 using Discord;
 
-namespace Betty
+namespace Betty.utilities
 {
 	public class StringConverter
 	{

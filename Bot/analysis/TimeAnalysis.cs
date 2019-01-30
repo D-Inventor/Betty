@@ -5,17 +5,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Discord.Commands;
 
+using Betty.utilities;
+
 namespace Betty
 {
 	class Analysis
 	{
-		DateTimeUtils datetimeutils;
-		Settings settings;
+		StateCollection statecollection;
 
 		public Analysis(IServiceProvider services)
 		{
-			datetimeutils = services.GetRequiredService<DateTimeUtils>();
-			settings = services.GetRequiredService<Settings>();
+			statecollection = services.GetRequiredService<StateCollection>();
 		}
 
 		public async Task AnalyseTime(SocketCommandContext Context)
@@ -23,23 +23,23 @@ namespace Betty
 			DateTime now = DateTime.UtcNow;
 
 			// check if the text contains a time indication
-			TimeSpan? FoundTime = datetimeutils.StringToTime(Context.Message.Content, false);
+			TimeSpan? FoundTime = DateTimeMethods.StringToTime(Context.Message.Content, false);
 			if (!FoundTime.HasValue) return;
 
 			// check if the user has a timezone applied
-			TimeZoneInfo tz = datetimeutils.UserToTimezone(Context.User);
+			TimeZoneInfo tz = DateTimeMethods.UserToTimezone(Context.User);
 			if (tz == null) return;
 
 			// indicate that the bot is working on the answer
 			await Context.Channel.TriggerTypingAsync();
 
-			var language = settings.GetLanguage(Context.Guild);
+			var language = statecollection.GetLanguage(Context.Guild);
 
 			// find the desired date time in the local time
 			DateTime dt = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0) + FoundTime.Value;
 
 			// print the table to the chat
-			string result = datetimeutils.TimetableToString(datetimeutils.LocalTimeToTimetable(dt, tz, Context.Guild));
+			string result = DateTimeMethods.TimetableToString(DateTimeMethods.LocalTimeToTimetable(dt, tz, Context.Guild));
 			await Context.Channel.SendMessageAsync(language.GetString("scan.time.found"));
 
 			await Context.Channel.TriggerTypingAsync();

@@ -10,19 +10,19 @@ namespace Betty.commands
 	public class PingPong : ModuleBase<SocketCommandContext>
 	{
 		public IServiceProvider services { get; set; }
-		Settings settings;
+		StateCollection statecollection;
 
 		public PingPong(IServiceProvider services)
 		{
 			this.services = services;
-			settings = services.GetService<Settings>();
+			statecollection = services.GetService<StateCollection>();
 		}
 
 		[Command("ping"), Summary("Returns the ball like a pro")]
 		public async Task Ping([Remainder]string input = null)
 		{
 			await Context.Channel.TriggerTypingAsync();
-			string response = settings.GetLanguage(Context.Guild).GetString("command.ping");
+			string response = statecollection.GetLanguage(Context.Guild).GetString("command.ping");
 			await Context.Channel.SendMessageAsync(response);
 		}
 	}

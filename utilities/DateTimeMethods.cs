@@ -10,12 +10,12 @@ using Discord.WebSocket;
 
 using TimeZoneConverter;
 
-namespace Betty
+namespace Betty.utilities
 {
-	class DateTimeUtils
+	public static class DateTimeMethods
 	{
 		// create a timetable string based on given timetable
-		public string TimetableToString(IEnumerable<KeyValuePair<string, DateTime>> entries)
+		public static string TimetableToString(IEnumerable<KeyValuePair<string, DateTime>> entries)
 		{
 			// find the largest key value
 			int largest = Math.Max(entries.Select(kv => kv.Key.Length).Max(), 8);
@@ -40,13 +40,13 @@ namespace Betty
 			return sb.ToString();
 		}
 
-		public string TimeSpanToString(TimeSpan ts)
+		public static string TimeSpanToString(TimeSpan ts)
 		{
 			return (ts.Hours > 0 ? $"{ts.Hours} hours" : "") + (ts.Minutes > 0 && ts.Hours > 0 ? " and " : "") + (ts.Minutes > 0 || ts.Hours == 0 ? $"{ts.Minutes} minutes" : "");
 		}
 
 		// find the timezone for this user. return null if fail
-		public TimeZoneInfo UserToTimezone(SocketUser user)
+		public static TimeZoneInfo UserToTimezone(SocketUser user)
 		{
 			var userguild = user as SocketGuildUser;
 
@@ -56,14 +56,14 @@ namespace Betty
 		}
 
 		// find the timezone info for given id string
-		public TimeZoneInfo IDToTimezone(string id)
+		public static TimeZoneInfo IDToTimezone(string id)
 		{
 			TZConvert.TryGetTimeZoneInfo(id, out TimeZoneInfo t);
 			return t;
 		}
 
 		// using this guild, find the timezones that are used in this guild
-		public IEnumerable<string> GuildToTimezones(SocketGuild guild)
+		public static IEnumerable<string> GuildToTimezones(SocketGuild guild)
 		{
 			HashSet<string> timezones = new HashSet<string>();
 			foreach (var user in guild.Users)
@@ -74,7 +74,7 @@ namespace Betty
 			return timezones;
 		}
 
-		public IEnumerable<KeyValuePair<string, DateTime>> LocalTimeToTimetable(DateTime localtime, TimeZoneInfo source, SocketGuild guild)
+		public static IEnumerable<KeyValuePair<string, DateTime>> LocalTimeToTimetable(DateTime localtime, TimeZoneInfo source, SocketGuild guild)
 		{
 			foreach(string s in GuildToTimezones(guild).OrderBy(x => x))
 			{
@@ -89,7 +89,7 @@ namespace Betty
 		private static Regex date = new Regex(@"(?<day>\d{2}):(?<month>\d{2}):(?<year>\d{4})\s+(?<hour>\d{1,2})(:(?<minute>\d{2}))?\s*(?<ampm>am|pm)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		// find a time indication in a string and return it as a timespan
-		public TimeSpan? StringToTime(string input, bool onlytime = false)
+		public static TimeSpan? StringToTime(string input, bool onlytime = false)
 		{
 			// try to find a match
 			Regex rx = onlytime ? timeonlyRX : timeRX;
@@ -108,7 +108,7 @@ namespace Betty
 			return new TimeSpan(hours, minutes, 0);
 		}
 
-		public DateTime? StringToDatetime(string input)
+		public static DateTime? StringToDatetime(string input)
 		{
 			Match match = date.Match(input);
 			if (!match.Success) return null;
@@ -128,7 +128,7 @@ namespace Betty
 			return new DateTime(year, month, day, hour, minute, 0);
 		}
 
-		public async Task WaitForDate(DateTime date, CancellationToken token)
+		public static async Task WaitForDate(DateTime date, CancellationToken token)
 		{
 			while (!token.IsCancellationRequested && (date - DateTime.UtcNow).TotalMilliseconds > int.MaxValue)
 			{
@@ -139,7 +139,7 @@ namespace Betty
 		}
 
 		// takes a string and returns the date and the title
-		public void StringToAppointment(string input, out DateTime? date, out string title)
+		public static void StringToAppointment(string input, out DateTime? date, out string title)
 		{
 			Match match = appointment.Match(input);
 			if (!match.Success)
@@ -172,7 +172,7 @@ namespace Betty
 
 		private static HashSet<string> timezones = new HashSet<string>(TZConvert.KnownWindowsTimeZoneIds.Where(s => !s.StartsWith("UTC")));
 		
-		public bool IsTimezone(string input) => timezones.Contains(input);
-		public IEnumerable<string> Timezones() => timezones;
+		public static bool IsTimezone(string input) => timezones.Contains(input);
+		public static IEnumerable<string> Timezones() => timezones;
 	}
 }

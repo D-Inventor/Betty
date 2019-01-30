@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
+using Betty.utilities;
 
 namespace Betty.commands
 {
@@ -17,27 +18,25 @@ namespace Betty.commands
 		[Group("app"), Alias("application", "applications"), Summary("All commands, regarding application sessions")]
 		public class Applications : ModuleBase<SocketCommandContext>
 		{
-			Settings settings;
 			Agenda agenda;
-			DateTimeUtils datetimeutils;
 			Logger logger;
+			StateCollection statecollection;
 
 			public Applications(IServiceProvider services)
 			{
-				settings = services.GetService<Settings>();
 				agenda = services.GetService<Agenda>();
-				datetimeutils = services.GetService<DateTimeUtils>();
 				logger = services.GetService<Logger>();
+				statecollection = services.GetService<StateCollection>();
 			}
 
 			[Command("start"), Alias("begin"), Summary("Starts an application session by creating an invite url and an applications channel")]
 			public async Task StartApplications([Remainder]string input = null)
 			{
 				await Context.Channel.TriggerTypingAsync();
-				var language = settings.GetLanguage(Context.Guild);
+				var language = statecollection.GetLanguage(Context.Guild);
 
 				// allow only 1 application per guild
-				if (settings.GetApplicationActive(Context.Guild))
+				if (statecollection.GetApplicationActive(Context.Guild))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.appstart.isactive"));
 					return;
@@ -51,7 +50,7 @@ namespace Betty.commands
 				}
 
 				// user must have a timezone
-				TimeZoneInfo usertimezone = datetimeutils.UserToTimezone(Context.User);
+				TimeZoneInfo usertimezone = DateTimeMethods.UserToTimezone(Context.User);
 				if (usertimezone == null)
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.appstart.notimezone"));
@@ -59,7 +58,7 @@ namespace Betty.commands
 				}
 
 				// given deadline must be in proper format
-				DateTime? localdeadline = datetimeutils.StringToDatetime(input);
+				DateTime? localdeadline = DateTimeMethods.StringToDatetime(input);
 				if (!localdeadline.HasValue)
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.appstart.error"));
@@ -75,14 +74,14 @@ namespace Betty.commands
 				}
 
 				// creation must succeed
-				IInviteMetadata invite = await settings.StartApplication(Context.Guild, utcdeadline);
+				IInviteMetadata invite = await statecollection.StartApplication(Context.Guild, utcdeadline);
 				if (invite == null)
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.appstart.error"));
 					return;
 				}
 
-				agenda.Plan(Context.Guild, "Application selection", utcdeadline, channelid: settings.GetApplicationChannel(Context.Guild), notifications: new TimeSpan[] { new TimeSpan(5, 0, 0), new TimeSpan(0, 30, 0) }, action: async () => await ExpireAppLink(Context.Guild), savetoharddrive: false);
+				agenda.Plan(Context.Guild, "Application selection", utcdeadline, channel: statecollection.GetApplicationChannel(Context.Guild), notifications: new TimeSpan[] { new TimeSpan(5, 0, 0), new TimeSpan(0, 30, 0) }, action: async () => await ExpireAppLink(Context.Guild), savetoharddrive: false);
 				await Context.Channel.SendMessageAsync(language.GetString("command.appstart.success", new SentenceContext()
 																											.Add("url", invite.Url)));
 			}
@@ -91,7 +90,7 @@ namespace Betty.commands
 			{
 				try
 				{
-					var invite = await settings.GetApplicationInvite(guild);
+					var invite = await statecollection.GetApplicationInvite(guild);
 					await invite?.DeleteAsync();
 				}
 				catch(Exception e)
@@ -106,9 +105,9 @@ namespace Betty.commands
 				await Context.Channel.TriggerTypingAsync();
 
 				// make sure that applications are taking place
-				if (!settings.GetApplicationActive(Context.Guild))
+				if (!statecollection.GetApplicationActive(Context.Guild))
 				{
-					await Context.Channel.SendMessageAsync(settings.GetLanguage(Context.Guild).GetString("command.appstop.noapp"));
+					await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.appstop.noapp"));
 					return;
 				}
 
@@ -116,8 +115,8 @@ namespace Betty.commands
 				agenda.Cancel(Context.Guild, "Application selection");
 				await ExpireAppLink(Context.Guild);
 
-				await settings.StopApplication(Context.Guild);
-				await Context.Channel.SendMessageAsync(settings.GetLanguage(Context.Guild).GetString("command.appstop.success"));
+				await statecollection.StopApplication(Context.Guild);
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.appstop.success"));
 			}
 		}
 	}

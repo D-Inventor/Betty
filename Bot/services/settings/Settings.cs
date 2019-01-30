@@ -12,17 +12,14 @@ namespace Betty
 {
 	public partial class Settings
 	{
-		IServiceProvider services;
 		Constants constants;
 		Logger logger;
 
 		public Settings(IServiceProvider services)
 		{
 			// take reference to relevant services and create a new collection for guilds
-			this.services = services;
 			constants = services.GetRequiredService<Constants>();
 			logger = services.GetRequiredService<Logger>();
-			guildCollection = new Dictionary<ulong, GuildData>();
 		}
 
 		public bool Init()
@@ -144,7 +141,6 @@ namespace Betty
 		}
 
 		public string Token { get; private set; }
-
 		public LogSeverity LogLevel { get; private set; }
 	}
 }
