@@ -36,13 +36,13 @@ namespace Betty
 		public Bot()
 		{
 			// set up services and store reference to services that are relevant for this class
-			services		= BuildServiceProvider();
-			settings		= services.GetService<Settings>();
-			agenda			= services.GetService<Agenda>();
-			constants		= services.GetService<Constants>();
-			logger			= services.GetService<Logger>();
+			services = BuildServiceProvider();
+			settings = services.GetService<Settings>();
+			agenda = services.GetService<Agenda>();
+			constants = services.GetService<Constants>();
+			logger = services.GetService<Logger>();
 			statecollection = services.GetService<StateCollection>();
-			database		= services.GetService<GuildDB>();
+			database = services.GetService<GuildDB>();
 			analysis = new Analysis(services);
 		}
 
@@ -172,45 +172,7 @@ namespace Betty
 		
 		private async Task Client_GuildAvailable(SocketGuild guild)
 		{
-			var dbresult = from app in database.Applications
-						   where app.GuildID == guild.Id
-						   select app;
-
-			// test if there were any applications for this guild
-			if (dbresult.Any())
-			{
-				ApplicationTB app = dbresult.First();
-
-				// test if the deadline for this application has passed
-				if (app.Deadline < DateTime.UtcNow + new TimeSpan(0, 0, 30))
-				{
-					//cancel the applications
-				}
-				else
-				{
-					// try to get the channel for applications
-					SocketTextChannel channel;
-					try
-					{
-						channel = guild.GetTextChannel(app.Channel);
-					}
-					catch(Exception e)
-					{
-						logger.Log(new LogMessage(LogSeverity.Warning, "Bot", $"Attempted to load application channel in {guild.Name}, but failed: {e.Message}", e));
-						return;
-					}
-
-					IInviteMetadata invite = await statecollection.GetInviteByID(channel, app.InviteID);
-					if (invite == null) return;
-
-					agenda.Plan(guild, "Application selection", app.Deadline, channel: channel, notifications: constants.ApplicationNotifications, savetoharddrive: false, action: async () =>
-					{
-						await invite.DeleteAsync();
-					});
-				}
-			}
-
-			return;
+			
 		}
 
 		private Task Client_Log(LogMessage msg)

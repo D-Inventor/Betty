@@ -62,13 +62,11 @@ namespace Betty.Migrations
 
                     b.Property<DateTime>("Date");
 
-                    b.Property<bool>("DoNotifications");
-
                     b.Property<ulong?>("FK_Event_Guild");
 
                     b.Property<string>("Name");
 
-                    b.Property<ulong>("NotificationChannel");
+                    b.Property<ulong?>("NotificationChannel");
 
                     b.HasKey("EventID");
 

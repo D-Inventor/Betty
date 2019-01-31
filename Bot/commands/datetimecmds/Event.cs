@@ -11,6 +11,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 
 using Betty.utilities;
+using Betty.databases.guilds;
 
 namespace Betty.commands
 {
@@ -19,21 +20,29 @@ namespace Betty.commands
 		[Command("event"), Summary("Gets the nearest event on the agenda")]
 		public async Task Event([Remainder]string input = null)
 		{
+			// log command execution
+			CommandMethods.LogExecution(logger, "event", Context);
+
+			// indicate that the bot is working on the command
 			await Context.Channel.TriggerTypingAsync();
 
-			(var title, var date) = services.GetService<Agenda>().GetEvents(Context.Guild).FirstOrDefault();
+			// get the first event on the agenda if any
+			EventTB e = agenda.GetEvents(Context.Guild).FirstOrDefault();
 
 			var language = statecollection.GetLanguage(Context.Guild);
 
-			if (title == null)
+			// make sure that there is indeed an event
+			if (e == null)
 			{
+				// return failure to the user
 				await Context.Channel.SendMessageAsync(language.GetString("command.event.empty"));
 				return;
 			}
 
+			// return success to the user
 			await Context.Channel.SendMessageAsync(language.GetString("command.event.present", new SentenceContext()
-																									.Add("title", title)
-																									.Add("date", $"{date:dd MMMM} at {date:hh:mm tt} UTC")));
+																									.Add("title", e.Name)
+																									.Add("date", $"{e.Date:dd MMMM} at {e.Date:hh:mm tt} UTC")));
 		}
 	}
 }

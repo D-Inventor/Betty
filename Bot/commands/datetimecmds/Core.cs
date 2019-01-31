@@ -8,13 +8,17 @@ namespace Betty.commands
 {
 	public partial class DateConvert : ModuleBase<SocketCommandContext>
 	{
-		public IServiceProvider services { get; set; }
 		StateCollection statecollection;
+		Logger logger;
+		Agenda agenda;
+		Constants constants;
 
 		public DateConvert(IServiceProvider services)
 		{
-			this.services = services;
 			this.statecollection = services.GetService<StateCollection>();
+			logger = services.GetService<Logger>();
+			agenda = services.GetService<Agenda>();
+			constants = services.GetService<Constants>();
 		}
 	}
 }

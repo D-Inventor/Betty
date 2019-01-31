@@ -54,8 +54,7 @@ namespace Betty.Migrations
                     FK_Event_Guild = table.Column<ulong>(nullable: true),
                     Name = table.Column<string>(nullable: true),
                     Date = table.Column<DateTime>(nullable: false),
-                    NotificationChannel = table.Column<ulong>(nullable: false),
-                    DoNotifications = table.Column<bool>(nullable: false)
+                    NotificationChannel = table.Column<ulong>(nullable: true)
                 },
                 constraints: table =>
                 {

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Betty.Migrations
 {
     [DbContext(typeof(GuildDB))]
-    [Migration("20190130093539_InitialCreate")]
+    [Migration("20190131135341_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -64,13 +64,11 @@ namespace Betty.Migrations
 
                     b.Property<DateTime>("Date");
 
-                    b.Property<bool>("DoNotifications");
-
                     b.Property<ulong?>("FK_Event_Guild");
 
                     b.Property<string>("Name");
 
-                    b.Property<ulong>("NotificationChannel");
+                    b.Property<ulong?>("NotificationChannel");
 
                     b.HasKey("EventID");
 

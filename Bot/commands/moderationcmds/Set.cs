@@ -13,58 +13,84 @@ using Betty.utilities;
 
 namespace Betty.commands
 {
-	public partial class Moderation
+	[Group("set"), Summary("Sets a given setting to a given value")]
+	public class Set : ModuleBase<SocketCommandContext>
 	{
-		[Group("set"), Summary("Sets a given setting to a given value")]
-		public class Set : ModuleBase<SocketCommandContext>
+		StateCollection statecollection;
+		Constants constants;
+		Logger logger;
+
+		public Set(IServiceProvider services)
 		{
-			StateCollection statecollection;
-			Constants constants;
-			public Set(IServiceProvider services)
+			this.statecollection = services.GetService<StateCollection>();
+			this.constants = services.GetService<Constants>();
+			this.logger = services.GetService<Logger>();
+		}
+
+		[Command("public"), Summary("Sets the channel of execution as the public channel")]
+		public async Task set_public([Remainder]string input = null)
+		{
+			// log command execution
+			CommandMethods.LogExecution(logger, "set public", Context);
+
+			// indicate that the bot is working on the command
+			await Context.Channel.TriggerTypingAsync();
+
+			statecollection.SetPublicChannel(Context.Guild, Context.Channel.Id);
+			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.public"));
+		}
+
+		[Command("notification"), Alias("notifications"), Summary("Sets the channel of execution as the notification channel")]
+		public async Task set_notification([Remainder]string input = null)
+		{
+			// log command execution
+			CommandMethods.LogExecution(logger, "set notification", Context);
+
+			// indicate that the bot is working on the command
+			await Context.Channel.TriggerTypingAsync();
+
+			statecollection.SetNotificationChannel(Context.Guild, Context.Channel.Id);
+			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.notification"));
+		}
+
+		[Command("timezones"), Alias("timezone"), Summary("Goes through all the timezones and creates/updates them accordingly")]
+		public async Task set_timezones([Remainder]string input = null)
+		{
+			// log command execution
+			CommandMethods.LogExecution(logger, "set timezones", Context);
+
+			// indicate that the bot is working on the command
+			await Context.Channel.TriggerTypingAsync();
+
+			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.timezones.wait"));
+
+			// find all the current roles in the guild
+			IEnumerable<SocketRole> present = from role in Context.Guild.Roles
+											  where DateTimeMethods.IsTimezone(role.Name)
+											  select role;
+
+			// add all the timezones that are not present already
+			foreach (string t in DateTimeMethods.Timezones())
 			{
-				this.statecollection = services.GetService<StateCollection>();
-				this.constants = services.GetService<Constants>();
-			}
-
-			[Command("public"), Summary("Sets the channel of execution as the public channel")]
-			public async Task set_public([Remainder]string input = null)
-			{
-				await Context.Channel.TriggerTypingAsync();
-				statecollection.SetPublicChannel(Context.Guild, Context.Channel.Id);
-
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.public"));
-			}
-
-			[Command("notification"), Alias("notifications"), Summary("Sets the channel of execution as the notification channel")]
-			public async Task set_notification([Remainder]string input = null)
-			{
-				await Context.Channel.TriggerTypingAsync();
-				statecollection.SetNotificationChannel(Context.Guild, Context.Channel.Id);
-
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.notification"));
-			}
-
-			[Command("timezones"), Alias("timezone"), Summary("Creates all the required roles to perform time queries")]
-			public async Task set_timezones([Remainder]string input = null)
-			{
-				await Context.Channel.TriggerTypingAsync();
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.timezones.wait"));
-
-				// find all the current roles in the guild
-				IEnumerable<string> present = Context.Guild.Roles.Select(r => r.Name);
-
-				// add all the timezones as roles if the timezone isn't already present
-				foreach (string t in DateTimeMethods.Timezones())
+				if (!present.Any(x => x.Name == t))
 				{
-					if (!present.Contains(t))
-					{
-						await Context.Guild.CreateRoleAsync(t, isHoisted: false, permissions: constants.RolePermissions);
-					}
+					await Context.Guild.CreateRoleAsync(t, isHoisted: false, permissions: constants.RolePermissions);
 				}
-
-				await Context.Channel.TriggerTypingAsync();
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.timezones.done"));
 			}
+
+			// update the roles of the timezones that áre present
+			foreach(SocketRole sr in present)
+			{
+				await sr.ModifyAsync((x) =>
+				{
+					x.Permissions = constants.RolePermissions;
+					x.Mentionable = true;
+				});
+			}
+
+			// return success to the user
+			await Context.Channel.TriggerTypingAsync();
+			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.timezones.done"));
 		}
 	}
 }

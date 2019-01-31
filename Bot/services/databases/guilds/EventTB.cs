@@ -15,8 +15,7 @@ namespace Betty.databases.guilds
 
 		public string Name { get; set; }
 		public DateTime Date { get; set; }
-		public ulong NotificationChannel { get; set; }
-		public bool DoNotifications { get; set; }
+		public ulong? NotificationChannel { get; set; }
 		public ICollection<EventNotificationTB> Notifications { get; set; }
 	}
 }

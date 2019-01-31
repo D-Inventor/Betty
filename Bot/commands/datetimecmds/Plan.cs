@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Discord;
 using Discord.Commands;
 
 using Betty.utilities;
@@ -15,6 +16,10 @@ namespace Betty.commands
 		[Command("plan"), Summary("This command takes a time and displays a table which converts that time to all the timezones")]
 		public async Task Plan([Remainder]string input = null)
 		{
+			// log command execution
+			CommandMethods.LogExecution(logger, "plan", Context);
+
+			// indicate that the bot is working on the command
 			await Context.Channel.TriggerTypingAsync();
 
 			var language = statecollection.GetLanguage(Context.Guild);
@@ -34,27 +39,26 @@ namespace Betty.commands
 				return;
 			}
 
-			// make sure that a valid datetime has been provided
-			DateTime? date;
-			string title;
-			DateTimeMethods.StringToAppointment(input, out date, out title);
+			// make sure that a valid input has been provided
+			DateTimeMethods.StringToAppointment(input, out DateTime? date, out string title);
 			if (!date.HasValue)
 			{
 				await Context.Channel.SendMessageAsync(language.GetString("command.plan.error"));
 				return;
 			}
 
+			// make sure that the provided date is in the future
 			var dateutc = TimeZoneInfo.ConvertTimeToUtc(date.Value, timezone);
-			TimeSpan ts = dateutc - DateTime.UtcNow;
-
-			if(ts < TimeSpan.Zero)
+			if(dateutc < DateTime.UtcNow)
 			{
 				await Context.Channel.SendMessageAsync(language.GetString("command.plan.past"));
 				return;
 			}
 
-			services.GetService<Agenda>().Plan(Context.Guild, title, dateutc);
+			// put the plan in the agenda
+			await agenda.Plan(Context.Guild, title, dateutc, notifications: constants.EventNotifications);
 
+			// return success to the user
 			await Context.Channel.SendMessageAsync(language.GetString("command.plan.success", new SentenceContext()
 																								.Add("date", $"{dateutc:dd MMMM} at {dateutc:hh:mm tt} UTC")
 																								.Add("title", title)));
