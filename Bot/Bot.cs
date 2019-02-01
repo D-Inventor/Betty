@@ -32,6 +32,7 @@ namespace Betty
 		Logger logger;
 		StateCollection statecollection;
 		GuildDB database;
+		Notifier notifier;
 
 		public Bot()
 		{
@@ -43,6 +44,7 @@ namespace Betty
 			logger = services.GetService<Logger>();
 			statecollection = services.GetService<StateCollection>();
 			database = services.GetService<GuildDB>();
+			notifier = services.GetService<Notifier>();
 			analysis = new Analysis(services);
 		}
 
@@ -117,6 +119,7 @@ namespace Betty
 			.AddDbContext<GuildDB>()
 			.AddSingleton(x => new Logger(x))
 			.AddSingleton(x => new StateCollection(x))
+			.AddSingleton(x => new Notifier(x))
 			.AddSingleton(x => new Settings(x))
 			.AddSingleton(x => new Agenda(x))
 			.BuildServiceProvider();
@@ -172,7 +175,28 @@ namespace Betty
 		
 		private async Task Client_GuildAvailable(SocketGuild guild)
 		{
-			
+			// check if this guild was having applications and create the notifications if necessary
+			if (statecollection.GetApplicationActive(guild))
+			{
+				logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Reading application data from database for {guild.Name}"));
+
+				// create notifications and store cancellation token
+				var ctoken = notifier.CreateWaiterTask(guild, statecollection.GetApplicationChannel(guild), messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, statecollection.GetApplicationDeadline(guild).Value, "Application selection")
+								, action: async () =>
+								{
+									IInviteMetadata invite = await statecollection.GetApplicationInvite(guild);
+									try
+									{
+										await invite?.DeleteAsync();
+									}
+									catch(Exception e)
+									{
+										logger.Log(new LogMessage(LogSeverity.Warning, "Commands", $"Attempted to delete invitation in {guild.Name}, but failed: {e.Message}"));
+									}
+								});
+
+				statecollection.SetApplicationToken(guild, ctoken);
+			}
 		}
 
 		private Task Client_Log(LogMessage msg)

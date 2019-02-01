@@ -15,6 +15,7 @@ namespace Betty
 {
 	public class GuildState
 	{
-		public StringConverter Language { get; set; }
+		public StringConverter Language { get; set; } = null;
+		public CancellationTokenSource ApplicationToken { get; set; } = null;
 	}
 }

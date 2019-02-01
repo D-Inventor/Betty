@@ -9,11 +9,9 @@ namespace Betty.databases.guilds
 	public class EventNotificationTB
 	{
 		[Key]
-		public ulong NotificationID { get; set; }
-
-		[ForeignKey("FK_EventNotification_Event")]
+		public ulong NotificationId { get; set; }
+		
 		public EventTB Event { get; set; }
-
 		public DateTime DateTime { get; set; }
 		public string ResponseKeyword { get; set; }
 	}

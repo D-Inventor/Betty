@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Betty.Migrations
 {
     [DbContext(typeof(GuildDB))]
-    [Migration("20190131135341_InitialCreate")]
+    [Migration("20190131211551_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -20,20 +20,20 @@ namespace Betty.Migrations
 
             modelBuilder.Entity("Betty.databases.guilds.ApplicationTB", b =>
                 {
-                    b.Property<ulong>("GuildID")
+                    b.Property<ulong>("ApplicationId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<ulong>("Channel");
 
                     b.Property<DateTime>("Deadline");
 
-                    b.Property<ulong>("FK_Application_Guild");
+                    b.Property<ulong>("GuildId");
 
                     b.Property<string>("InviteID");
 
-                    b.HasKey("GuildID");
+                    b.HasKey("ApplicationId");
 
-                    b.HasIndex("FK_Application_Guild")
+                    b.HasIndex("GuildId")
                         .IsUnique();
 
                     b.ToTable("Applications");
@@ -41,45 +41,45 @@ namespace Betty.Migrations
 
             modelBuilder.Entity("Betty.databases.guilds.EventNotificationTB", b =>
                 {
-                    b.Property<ulong>("NotificationID")
+                    b.Property<ulong>("NotificationId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<DateTime>("DateTime");
 
-                    b.Property<ulong?>("FK_EventNotification_Event");
+                    b.Property<ulong?>("EventId");
 
                     b.Property<string>("ResponseKeyword");
 
-                    b.HasKey("NotificationID");
+                    b.HasKey("NotificationId");
 
-                    b.HasIndex("FK_EventNotification_Event");
+                    b.HasIndex("EventId");
 
                     b.ToTable("EventNotifications");
                 });
 
             modelBuilder.Entity("Betty.databases.guilds.EventTB", b =>
                 {
-                    b.Property<ulong>("EventID")
+                    b.Property<ulong>("EventId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<DateTime>("Date");
 
-                    b.Property<ulong?>("FK_Event_Guild");
+                    b.Property<ulong?>("GuildId");
 
                     b.Property<string>("Name");
 
                     b.Property<ulong?>("NotificationChannel");
 
-                    b.HasKey("EventID");
+                    b.HasKey("EventId");
 
-                    b.HasIndex("FK_Event_Guild");
+                    b.HasIndex("GuildId");
 
                     b.ToTable("Events");
                 });
 
             modelBuilder.Entity("Betty.databases.guilds.GuildTB", b =>
                 {
-                    b.Property<ulong>("GuildID")
+                    b.Property<ulong>("GuildId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("Language");
@@ -90,7 +90,7 @@ namespace Betty.Migrations
 
                     b.Property<ulong?>("Public");
 
-                    b.HasKey("GuildID");
+                    b.HasKey("GuildId");
 
                     b.ToTable("Guilds");
                 });
@@ -99,7 +99,7 @@ namespace Betty.Migrations
                 {
                     b.HasOne("Betty.databases.guilds.GuildTB", "Guild")
                         .WithOne("Application")
-                        .HasForeignKey("Betty.databases.guilds.ApplicationTB", "FK_Application_Guild")
+                        .HasForeignKey("Betty.databases.guilds.ApplicationTB", "GuildId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
@@ -107,14 +107,14 @@ namespace Betty.Migrations
                 {
                     b.HasOne("Betty.databases.guilds.EventTB", "Event")
                         .WithMany("Notifications")
-                        .HasForeignKey("FK_EventNotification_Event");
+                        .HasForeignKey("EventId");
                 });
 
             modelBuilder.Entity("Betty.databases.guilds.EventTB", b =>
                 {
                     b.HasOne("Betty.databases.guilds.GuildTB", "Guild")
                         .WithMany("Events")
-                        .HasForeignKey("FK_Event_Guild");
+                        .HasForeignKey("GuildId");
                 });
 #pragma warning restore 612, 618
         }

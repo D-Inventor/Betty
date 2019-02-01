@@ -41,8 +41,6 @@ namespace Betty
 				NotificationChannel = channel != null ? (ulong?)channel.Id : null,
 			};
 
-			await database.Events.AddAsync(ev);
-
 			// if there is interest for notifications, plan those as well
 			if (doNotifications)
 			{
@@ -57,7 +55,7 @@ namespace Betty
 					}
 				};
 
-				//then add all the other notifications
+				// then add all the other notifications
 				if (notifications != null) notcollection.AddRange
 						(from n in notifications
 						 select new EventNotificationTB
@@ -67,8 +65,11 @@ namespace Betty
 						 	ResponseKeyword = "notifications.timeleft"
 						 });
 
-				await database.EventNotifications.AddRangeAsync(notcollection);
+				// add these notifications to the event
+				database.EventNotifications.AddRange(notcollection);
 			}
+
+			database.Events.Add(ev);
 
 			try
 			{
@@ -84,19 +85,30 @@ namespace Betty
 
 		public async Task<bool> Cancel(SocketGuild guild, string name)
 		{
-			// get the corresponding event from the database
-			var ev = (from e in database.Events
-						   where e.Guild.GuildID == guild.Id && e.Name == name
-						   orderby e.Date
-						   select e).FirstOrDefault();
+			try
+			{
+				// get the corresponding event from the database
+				var ev = (from e in database.Events
+							   where e.Guild.GuildId == guild.Id && e.Name == name
+							   orderby e.Date
+							   select e).FirstOrDefault();
 
-			// return failure if there was no match
-			if (ev == null) return false;
+				// return failure if there was no match
+				if (ev == null) return false;
 
-			// delete all the event data from the database
-#error ev.Notifications is null, where it shouldn't be
-			database.EventNotifications.RemoveRange(ev.Notifications);
-			database.Events.Remove(ev);
+				// get all the notifications from the database
+				var en = from e in database.EventNotifications
+						 where e.Event.EventId == ev.EventId
+						 select e;
+
+				// delete all the event data from the database
+				database.EventNotifications.RemoveRange(en);
+				database.Events.Remove(ev);
+			}
+			catch(Exception e)
+			{
+				logger.Log(new LogMessage(LogSeverity.Error, "Agenda", $"Attempted to cancel event, but failed: {e.Message}\n{e.StackTrace}"));
+			}
 
 			try
 			{
@@ -117,7 +129,7 @@ namespace Betty
 		public IEnumerable<EventTB> GetEvents(SocketGuild guild)
 		{
 			return from e in database.Events
-				   where e.Guild.GuildID == guild.Id
+				   where e.Guild.GuildId == guild.Id
 				   orderby e.Date
 				   select e;
 		}

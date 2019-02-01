@@ -19,12 +19,16 @@ namespace Betty.commands
 		Agenda agenda;
 		Logger logger;
 		StateCollection statecollection;
+		Notifier notifier;
+		Constants constants;
 
 		public Applications(IServiceProvider services)
 		{
 			agenda = services.GetService<Agenda>();
 			logger = services.GetService<Logger>();
 			statecollection = services.GetService<StateCollection>();
+			notifier = services.GetService<Notifier>();
+			constants = services.GetService<Constants>();
 		}
 
 		[Command("start"), Alias("begin"), Summary("Starts an application session by creating an invite url and an applications channel")]
@@ -83,8 +87,12 @@ namespace Betty.commands
 				await Context.Channel.SendMessageAsync(language.GetString("command.appstart.error"));
 				return;
 			}
+			
+			// create notifications and store cancellation token
+			var ctoken = notifier.CreateWaiterTask(Context.Guild, statecollection.GetApplicationChannel(Context.Guild), messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, utcdeadline, "Application selection")
+							, action: async() => await ExpireAppLink(Context.Guild));
 
-#warning TODO: add notification
+			statecollection.SetApplicationToken(Context.Guild, ctoken);
 
 			// return success to the user
 			await Context.Channel.SendMessageAsync(language.GetString("command.appstart.success", new SentenceContext()
@@ -107,7 +115,17 @@ namespace Betty.commands
 				return;
 			}
 
-#warning TODO: cancel notification
+			// try to cancel further notifications
+			var token = statecollection.GetApplicationToken(Context.Guild);
+			if(token == null)
+			{
+				logger.Log(new LogMessage(LogSeverity.Warning, "Commands", $"Attempted to cancel notifier, but failed: Cancellation token is null"));
+			}
+			else
+			{
+				token.Cancel();
+				statecollection.SetApplicationToken(Context.Guild, null);
+			}
 
 			await ExpireAppLink(Context.Guild);
 

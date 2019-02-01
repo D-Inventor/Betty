@@ -8,11 +8,9 @@ namespace Betty.databases.guilds
 	public class EventTB
 	{
 		[Key]
-		public ulong EventID { get; set; }
-
-		[ForeignKey("FK_Event_Guild")]
+		public ulong EventId { get; set; }
+		
 		public GuildTB Guild { get; set; }
-
 		public string Name { get; set; }
 		public DateTime Date { get; set; }
 		public ulong? NotificationChannel { get; set; }

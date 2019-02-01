@@ -130,12 +130,40 @@ namespace Betty.utilities
 
 		public static async Task WaitForDate(DateTime date, CancellationToken token)
 		{
+			// if the date is in the past, don't wait
+			if (date < DateTime.UtcNow) return;
+
+			// if the date is too far away, split the wait in smaller pieces
 			while (!token.IsCancellationRequested && (date - DateTime.UtcNow).TotalMilliseconds > int.MaxValue)
 			{
 				await Task.Delay(int.MaxValue >> 1, token);
 			}
 
+			// wait until the date has passed
 			await Task.Delay(date - DateTime.UtcNow, token);
+		}
+
+		public static IEnumerable<TimedMessage> BuildMessageList(IEnumerable<TimeSpan> offsets, DateTime deadline, string name)
+		{
+			foreach(var ts in offsets)
+			{
+				yield return new TimedMessage
+				{
+					Date = deadline - ts,
+					Keyword = "notifications.timeleft",
+					Context = new SentenceContext()
+						.Add("title", name)
+						.Add("time", TimeSpanToString(ts))
+				};
+			}
+
+			yield return new TimedMessage
+			{
+				Date = deadline,
+				Keyword = "notifications.deadline",
+				Context = new SentenceContext()
+					.Add("title", name)
+			};
 		}
 
 		// takes a string and returns the date and the title

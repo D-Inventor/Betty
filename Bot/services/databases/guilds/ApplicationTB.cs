@@ -9,9 +9,9 @@ namespace Betty.databases.guilds
 	public class ApplicationTB
 	{
 		[Key]
-		public ulong GuildID { get; set; }
-
-		[ForeignKey("FK_Application_Guild")]
+		public ulong ApplicationId { get; set; }
+		
+		public ulong GuildId { get; set; }
 		public GuildTB Guild { get; set; }
 
 		public ulong Channel { get; set; }

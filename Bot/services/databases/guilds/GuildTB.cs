@@ -7,7 +7,7 @@ namespace Betty.databases.guilds
 	public class GuildTB
 	{
 		[Key]
-		public ulong GuildID { get; set; }
+		public ulong GuildId { get; set; }
 
 		public string Name { get; set; }
 		public string Language { get; set; }

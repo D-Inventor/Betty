@@ -12,6 +12,7 @@ using GuildCollection = System.Collections.Generic.Dictionary<ulong, Betty.Guild
 using Betty.utilities;
 using Betty.databases.guilds;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Betty
 {
@@ -34,7 +35,7 @@ namespace Betty
 		{
 			//query the database
 			var dbresult = from g in database.Guilds
-						   where g.GuildID == guild.Id
+						   where g.GuildId == guild.Id
 						   select g;
 
 			GuildTB result;
@@ -131,17 +132,24 @@ namespace Betty
 		{
 			// make sure that the language is loaded.
 			if (!guildCollection.ContainsKey(guild.Id))
-			{
-				GuildTB dbresult = GetGuildEntry(guild);
-				StringConverter language = StringConverter.LoadFromFile(constants.PathToLanguage(dbresult.Language), logger);
-				guildCollection.Add(guild.Id, new GuildState
-				{
-					Language = language,
-				});
-			}
+				guildCollection.Add(guild.Id, CreateDefaultState(guild));
 
 			// return the language for given guild.
 			return guildCollection[guild.Id].Language;
+		}
+
+		public CancellationTokenSource GetApplicationToken(SocketGuild guild)
+		{
+			if (!guildCollection.ContainsKey(guild.Id)) return null;
+			return guildCollection[guild.Id].ApplicationToken;
+		}
+
+		public void SetApplicationToken(SocketGuild guild, CancellationTokenSource token)
+		{
+			if (!guildCollection.ContainsKey(guild.Id))
+				guildCollection.Add(guild.Id, CreateDefaultState(guild));
+
+			guildCollection[guild.Id].ApplicationToken = token;
 		}
 
 		public bool GetApplicationActive(SocketGuild guild)
@@ -149,14 +157,14 @@ namespace Betty
 			// return whether or not applications are active for given guild.
 			GuildTB dbresult = GetGuildEntry(guild);
 
-			return dbresult.Application == null;
+			return dbresult.Application != null;
 		}
 
 		public SocketTextChannel GetApplicationChannel(SocketGuild guild)
 		{
 			// find the application in the database
 			var dbresult = from app in database.Applications
-						   where app.GuildID == guild.Id
+						   where app.GuildId == guild.Id
 						   select app.Channel;
 
 			// return null if there is no application currently
@@ -180,7 +188,7 @@ namespace Betty
 		{
 			// find the invite id in the database
 			var dbresult = from app in database.Applications
-						   where app.GuildID == guild.Id
+						   where app.GuildId == guild.Id
 						   select app;
 
 			// if there's no application, return null
@@ -206,7 +214,7 @@ namespace Betty
 		{
 			// query the database for the deadline
 			var dbresult = from app in database.Applications
-						   where app.GuildID == guild.Id
+						   where app.GuildId == guild.Id
 						   select app.Deadline;
 
 			// return the date if present or null otherwise
@@ -218,8 +226,8 @@ namespace Betty
 		{
 			// check if there are already applications going
 			var dbresultapp = from app in database.Applications
-						   where app.GuildID == guild.Id
-						   select app;
+							  where app.GuildId == guild.Id
+							  select app;
 
 			if (dbresultapp.Any()) return null;
 
@@ -267,15 +275,22 @@ namespace Betty
 				return null;
 			}
 
-			// add new entry to the database
-			await database.Applications.AddAsync(new ApplicationTB
+			database.Applications.Add(new ApplicationTB
 			{
 				Channel = appchannel.Id,
 				Deadline = deadline,
 				Guild = gtb,
-				GuildID = guild.Id
+				InviteID = invite.Id,
 			});
-			await database.SaveChangesAsync();
+
+			try
+			{
+				await database.SaveChangesAsync();
+			}
+			catch(Exception e)
+			{
+				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to save application to database, but failed: {e.Message}\n{e.StackTrace}"));
+			}
 
 			return invite;
 		}
@@ -284,7 +299,7 @@ namespace Betty
 		{
 			// check if there were applications in the first place
 			var dbresult = from app in database.Applications
-						   where app.GuildID == guild.Id
+						   where app.GuildId == guild.Id
 						   select app;
 
 			if (!dbresult.Any()) return;
@@ -328,7 +343,7 @@ namespace Betty
 		{
 			GuildTB result = new GuildTB
 			{
-				GuildID = guild.Id,
+				GuildId = guild.Id,
 				Name = guild.Name,
 				Language = "Assistant",
 			};
@@ -338,6 +353,16 @@ namespace Betty
 			database.SaveChanges();
 
 			return result;
+		}
+
+		private GuildState CreateDefaultState(SocketGuild guild)
+		{
+			GuildTB dbresult = GetGuildEntry(guild);
+			StringConverter language = StringConverter.LoadFromFile(constants.PathToLanguage(dbresult.Language), logger);
+			return new GuildState
+			{
+				Language = language,
+			};
 		}
 	}
 }

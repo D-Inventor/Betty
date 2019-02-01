@@ -11,7 +11,7 @@ namespace Betty.Migrations
                 name: "Guilds",
                 columns: table => new
                 {
-                    GuildID = table.Column<ulong>(nullable: false)
+                    GuildId = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(nullable: true),
                     Language = table.Column<string>(nullable: true),
@@ -20,28 +20,28 @@ namespace Betty.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Guilds", x => x.GuildID);
+                    table.PrimaryKey("PK_Guilds", x => x.GuildId);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Applications",
                 columns: table => new
                 {
-                    GuildID = table.Column<ulong>(nullable: false)
+                    ApplicationId = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    FK_Application_Guild = table.Column<ulong>(nullable: false),
+                    GuildId = table.Column<ulong>(nullable: false),
                     Channel = table.Column<ulong>(nullable: false),
                     InviteID = table.Column<string>(nullable: true),
                     Deadline = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Applications", x => x.GuildID);
+                    table.PrimaryKey("PK_Applications", x => x.ApplicationId);
                     table.ForeignKey(
-                        name: "FK_Applications_Guilds_FK_Application_Guild",
-                        column: x => x.FK_Application_Guild,
+                        name: "FK_Applications_Guilds_GuildId",
+                        column: x => x.GuildId,
                         principalTable: "Guilds",
-                        principalColumn: "GuildID",
+                        principalColumn: "GuildId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -49,21 +49,21 @@ namespace Betty.Migrations
                 name: "Events",
                 columns: table => new
                 {
-                    EventID = table.Column<ulong>(nullable: false)
+                    EventId = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    FK_Event_Guild = table.Column<ulong>(nullable: true),
+                    GuildId = table.Column<ulong>(nullable: true),
                     Name = table.Column<string>(nullable: true),
                     Date = table.Column<DateTime>(nullable: false),
                     NotificationChannel = table.Column<ulong>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Events", x => x.EventID);
+                    table.PrimaryKey("PK_Events", x => x.EventId);
                     table.ForeignKey(
-                        name: "FK_Events_Guilds_FK_Event_Guild",
-                        column: x => x.FK_Event_Guild,
+                        name: "FK_Events_Guilds_GuildId",
+                        column: x => x.GuildId,
                         principalTable: "Guilds",
-                        principalColumn: "GuildID",
+                        principalColumn: "GuildId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -71,38 +71,38 @@ namespace Betty.Migrations
                 name: "EventNotifications",
                 columns: table => new
                 {
-                    NotificationID = table.Column<ulong>(nullable: false)
+                    NotificationId = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    FK_EventNotification_Event = table.Column<ulong>(nullable: true),
+                    EventId = table.Column<ulong>(nullable: true),
                     DateTime = table.Column<DateTime>(nullable: false),
                     ResponseKeyword = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EventNotifications", x => x.NotificationID);
+                    table.PrimaryKey("PK_EventNotifications", x => x.NotificationId);
                     table.ForeignKey(
-                        name: "FK_EventNotifications_Events_FK_EventNotification_Event",
-                        column: x => x.FK_EventNotification_Event,
+                        name: "FK_EventNotifications_Events_EventId",
+                        column: x => x.EventId,
                         principalTable: "Events",
-                        principalColumn: "EventID",
+                        principalColumn: "EventId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Applications_FK_Application_Guild",
+                name: "IX_Applications_GuildId",
                 table: "Applications",
-                column: "FK_Application_Guild",
+                column: "GuildId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_EventNotifications_FK_EventNotification_Event",
+                name: "IX_EventNotifications_EventId",
                 table: "EventNotifications",
-                column: "FK_EventNotification_Event");
+                column: "EventId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Events_FK_Event_Guild",
+                name: "IX_Events_GuildId",
                 table: "Events",
-                column: "FK_Event_Guild");
+                column: "GuildId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

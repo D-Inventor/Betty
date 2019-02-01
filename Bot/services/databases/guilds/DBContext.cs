@@ -15,5 +15,21 @@ namespace Betty.databases.guilds
 		{
 			optionsBuilder.UseSqlite($"Data Source={Path.Combine("data", "databases", "guild.db")}");
 		}
+
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			modelBuilder.Entity<GuildTB>()
+				.HasOne(p => p.Application)
+				.WithOne(i => i.Guild)
+				.HasForeignKey<ApplicationTB>(b => b.GuildId);
+
+			modelBuilder.Entity<GuildTB>()
+				.HasMany(p => p.Events)
+				.WithOne(i => i.Guild);
+
+			modelBuilder.Entity<EventTB>()
+				.HasMany(p => p.Notifications)
+				.WithOne(i => i.Event);
+		}
 	}
 }
