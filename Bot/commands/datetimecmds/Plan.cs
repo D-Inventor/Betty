@@ -56,7 +56,7 @@ namespace Betty.commands
 			}
 
 			// put the plan in the agenda
-			await agenda.Plan(Context.Guild, title, dateutc, notifications: constants.EventNotifications);
+			agenda.Plan(Context.Guild, title, dateutc, notifications: constants.EventNotifications);
 
 			// return success to the user
 			await Context.Channel.SendMessageAsync(language.GetString("command.plan.success", new SentenceContext()

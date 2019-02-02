@@ -34,7 +34,7 @@ namespace Betty.commands
 			}
 
 			// try to remove event with given name from the agenda
-			if (!await agenda.Cancel(Context.Guild, input))
+			if (!agenda.Cancel(Context.Guild, input))
 			{
 				// return failure to the user
 				await Context.Channel.SendMessageAsync(language.GetString("command.cancel.notplanned"));

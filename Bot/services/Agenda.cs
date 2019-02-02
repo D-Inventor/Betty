@@ -41,70 +41,57 @@ namespace Betty
 		public void RestoreGuildEvents(SocketGuild guild)
 		{
 			// get all events and notifications for this guild
-			var evs = GetEventsAndNotifications(guild);
+			var evs = GetEvents(guild);
 			foreach(var ev in evs)
 			{
-				// check if this event has already passed
-				if(ev.Event.Date < DateTime.UtcNow)
-				{
-					// remove from the database
-					database.EventNotifications.RemoveRange(ev.Notifications);
-					database.Events.Remove(ev.Event);
-					continue;
-				}
+				// find corresponding notifications
+				var ens = from en in database.EventNotifications
+						  where en.Event == ev
+						  select en;
 
-				SocketTextChannel channel = null;
-				if(ev.Event.NotificationChannel != null)
-				{
-					try
-					{
-						// try to get the channel from the guild
-						guild.GetTextChannel(ev.Event.NotificationChannel.Value);
-					}
-					catch(Exception e)
-					{
-						// log failure
-						logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Attempted to get text channel from '{guild.Name}', but failed: {e.Message}\n{e.StackTrace}"));
-					}
-				}
+				// make sure that given event is still valid
+				if (!CheckEventValidity(ev, ens)) continue;
+
+				// get event channel
+				logger.Log(new LogMessage(LogSeverity.Info, "Agenda", $"Getting text channel for '{ev.Name}' from '{guild.Name}'"));
+				SocketTextChannel channel = GetChannel(guild, ev);
 
 				// create a waiter event
-				var token = notifier.CreateWaiterTask(guild, channel, messages: TimedMessagesEvent(ev), action: async () =>
+				logger.Log(new LogMessage(LogSeverity.Info, "Agenda", $"Creating waiter task for '{ev.Name}' from '{guild.Name}'"));
+				var token = notifier.CreateWaiterTask(guild, channel, messages: TimedMessagesFromEvent(new EventAndNotifications { Event = ev, Notifications = ens }), action: () =>
 				{
-					await Cancel(ev.Event);
+					Cancel(ev);
 				});
 				
 				// store cancellation token
-				if (!notifiercollection.TryAdd(ev.Event.EventId, token))
+				if (!notifiercollection.TryAdd(ev.EventId, token))
 				{
 					// log failure
 					logger.Log(new LogMessage(LogSeverity.Error, "Agenda", "Attempted to store cancellation token for event, but failed"));
 				}
 			}
+
+			//try
+			//{
+			//	// try to save potential changes to the database
+			//	database.SaveChanges();
+			//}
+			//catch (Exception e)
+			//{
+			//	// log failure
+			//	logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Attempted to remove events from database, but failed: {e.Message}\n{e.StackTrace}"));
+			//}
 		}
 
-		public async Task<bool> Plan(SocketGuild guild, string name, DateTime date, SocketTextChannel channel = null, bool doNotifications = true, TimeSpan[] notifications = null)
+		public bool Plan(SocketGuild guild, string name, DateTime date, SocketTextChannel channel = null, bool doNotifications = true, TimeSpan[] notifications = null)
 		{
 			// generate database data
-			var ev = CreateEventEntries(guild, name, date, channel, doNotifications, notifications);
+			var ev = StoreEventInDatabase(guild, name, date, channel, doNotifications, notifications);
 
-			database.Events.Add(ev.Event);
-			try
+			// create notifier for this event
+			var token = notifier.CreateWaiterTask(guild, null, messages: DateTimeMethods.BuildMessageList(constants.EventNotifications, ev.Event.Date, ev.Event.Name), action: () =>
 			{
-				// try to add event to the database
-				await database.SaveChangesAsync();
-			}
-			catch (Exception e)
-			{
-				// log failure and report back
-				logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Attempted to plan an event into the database, but failed: {e.Message}\n{e.StackTrace}"));
-				return false;
-			}
-
-			// create notifiers for this event
-			var token = notifier.CreateWaiterTask(guild, null, messages: DateTimeMethods.BuildMessageList(constants.EventNotifications, ev.Event.Date, ev.Event.Name), action: async () =>
-			{
-				await Cancel(ev.Event);
+				Cancel(ev.Event);
 			});
 
 			// store cancellation token
@@ -118,7 +105,7 @@ namespace Betty
 			return true;
 		}
 
-		public async Task<bool> Cancel(SocketGuild guild, string name)
+		public bool Cancel(SocketGuild guild, string name)
 		{
 			// get the corresponding event from the database
 			var ev = (from e in database.Events
@@ -129,57 +116,20 @@ namespace Betty
 			// return failure if there was no match
 			if (ev == null) return false;
 
-			// get all the notifications for given event from the database
-			var en = from e in database.EventNotifications
-					 where e.Event.EventId == ev.EventId
-					 select e;
-
-			// delete all the event data from the database
-			database.EventNotifications.RemoveRange(en);
-			database.Events.Remove(ev);
-
 			// cancel the notifications
-			notifiercollection.Remove(ev.EventId, out CancellationTokenSource token);
-			token.Cancel();
+			CancelNotifier(ev);
 
-			try
-			{
-				// try to save the changes
-				await database.SaveChangesAsync();
-				return true;
-			}
-			catch (Exception e)
-			{
-				// log failure
-				logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Attempted to remove event from database, but failed: {e.Message}\n{e.StackTrace}"));
-				return false;
-			}
+			// remove from database
+			return RemoveEventFromDatabase(ev);
 		}
 
-		public async Task<bool> Cancel(EventTB Event)
+		public bool Cancel(EventTB Event)
 		{
-			// get all the notifications from the database
-			var en = from e in database.EventNotifications
-					 where e.Event.EventId == Event.EventId
-					 select e;
-
-			database.EventNotifications.RemoveRange(en);
-			database.Events.Remove(Event);
-
 			// cancel the notifications
-			notifiercollection.Remove(Event.EventId, out CancellationTokenSource token);
-			token.Cancel();
+			CancelNotifier(Event);
 
-			try
-			{
-				await database.SaveChangesAsync();
-				return true;
-			}
-			catch (Exception e)
-			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Attempted to cancel event '{Event.Name}', but failed: {e.Message}\n{e.StackTrace}"));
-				return false;
-			}
+			// remove from the database
+			return RemoveEventFromDatabase(Event);
 		}
 
 		#region Getters
@@ -190,19 +140,11 @@ namespace Betty
 				   orderby e.Date
 				   select e;
 		}
-
-		public IEnumerable<EventAndNotifications> GetEventsAndNotifications(SocketGuild guild)
-		{
-			return from ev in database.Events
-				   where ev.Guild.GuildId == guild.Id
-				   join en in database.EventNotifications on ev equals en.Event into NotificationGroup
-				   select new EventAndNotifications { Event = ev, Notifications = NotificationGroup };
-		}
 		#endregion
 		#endregion
 
 		#region Private methods
-		private EventAndNotifications CreateEventEntries(SocketGuild guild, string name, DateTime date, SocketTextChannel channel = null, bool doNotifications = true, IEnumerable<TimeSpan> notifications = null)
+		private EventAndNotifications StoreEventInDatabase(SocketGuild guild, string name, DateTime date, SocketTextChannel channel = null, bool doNotifications = true, IEnumerable<TimeSpan> notifications = null)
 		{
 			// Get the data for this guild
 			GuildTB g = statecollection.GetGuildEntry(guild);
@@ -216,12 +158,51 @@ namespace Betty
 				NotificationChannel = channel != null ? (ulong?)channel.Id : null,
 			};
 
+			IEnumerable<EventNotificationTB> ens = null;
+			if (doNotifications) ens = CreateNotificationEntries(ev, notifications);
+
+			database.Events.Add(ev);
+			try
+			{
+				// try to save addition to database
+				database.SaveChanges();
+			}
+			catch(Exception e)
+			{
+				// log failure
+				logger.Log(new LogMessage(LogSeverity.Error, "Agenda", $"Attempted to write event to database, but failed: {e.Message}\n{e.StackTrace}"));
+			}
+
 			// return the event and the notifications
 			return new EventAndNotifications
 			{
 				Event = ev,
-				Notifications = doNotifications ? CreateNotificationEntries(ev, notifications) : null,
+				Notifications = ens,
 			};
+		}
+
+		private bool RemoveEventFromDatabase(EventTB ev)
+		{
+			// get all the notifications from the database
+			var en = from e in database.EventNotifications
+					 where e.Event.EventId == ev.EventId
+					 select e;
+
+			database.EventNotifications.RemoveRange(en);
+			database.Events.Remove(ev);
+
+			try
+			{
+				// try to apply removal to database
+				database.SaveChanges();
+				return true;
+			}
+			catch(Exception e)
+			{
+				// log failure
+				logger.Log(new LogMessage(LogSeverity.Error, "Agenda", $"Attempted to remove event from database, but failed: {e.Message}\n{e.StackTrace}"));
+				return false;
+			}
 		}
 
 		private IEnumerable<EventNotificationTB> CreateNotificationEntries(EventTB ev, IEnumerable<TimeSpan> notifications)
@@ -246,7 +227,7 @@ namespace Betty
 			};
 		}
 
-		private IEnumerable<TimedMessage> TimedMessagesEvent(EventAndNotifications ev)
+		private IEnumerable<TimedMessage> TimedMessagesFromEvent(EventAndNotifications ev)
 		{
 			foreach(var en in ev.Notifications)
 			{
@@ -260,6 +241,43 @@ namespace Betty
 						.Add("time", DateTimeMethods.TimeSpanToString(ev.Event.Date - en.Date)),
 				};
 			}
+		}
+
+		private bool CheckEventValidity(EventTB ev, IEnumerable<EventNotificationTB> ens)
+		{
+			// check if this event has already passed
+			if (ev.Date < DateTime.UtcNow)
+			{
+				// remove from the database
+				database.EventNotifications.RemoveRange(ens);
+				database.Events.Remove(ev);
+				return false;
+			}
+			return true;
+		}
+
+		private SocketTextChannel GetChannel(SocketGuild guild, EventTB ev)
+		{
+			// return null if no channel has been set
+			if (ev.NotificationChannel == null) return null;
+
+			try
+			{
+				// try to get the channel from the guild
+				return guild.GetTextChannel(ev.NotificationChannel.Value);
+			}
+			catch(Exception e)
+			{
+				// log failure
+				logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Attempted to get channel from '{guild.Name}', but failed: {e.Message}\n{e.StackTrace}"));
+				return null;
+			}
+		}
+
+		private void CancelNotifier(EventTB ev)
+		{
+			notifiercollection.Remove(ev.EventId, out CancellationTokenSource token);
+			token.Cancel();
 		}
 		#endregion
 	}

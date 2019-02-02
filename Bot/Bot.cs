@@ -113,7 +113,7 @@ namespace Betty
 			client.Log += Client_Log;
 			client.Ready += Client_Ready;
 			client.GuildAvailable += Client_GuildAvailable_RestoreApplication;
-			//client.GuildAvailable += Client_GuildAvailable_RestoreEvents;
+			client.GuildAvailable += Client_GuildAvailable_RestoreEvents;
 			client.MessageReceived += Client_MessageReceived;
 			client.UserJoined += Client_UserJoined;
 		}
