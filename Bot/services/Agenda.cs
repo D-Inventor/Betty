@@ -70,17 +70,6 @@ namespace Betty
 					logger.Log(new LogMessage(LogSeverity.Error, "Agenda", "Attempted to store cancellation token for event, but failed"));
 				}
 			}
-
-			//try
-			//{
-			//	// try to save potential changes to the database
-			//	database.SaveChanges();
-			//}
-			//catch (Exception e)
-			//{
-			//	// log failure
-			//	logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Attempted to remove events from database, but failed: {e.Message}\n{e.StackTrace}"));
-			//}
 		}
 
 		public bool Plan(SocketGuild guild, string name, DateTime date, SocketTextChannel channel = null, bool doNotifications = true, TimeSpan[] notifications = null)
@@ -160,6 +149,8 @@ namespace Betty
 
 			IEnumerable<EventNotificationTB> ens = null;
 			if (doNotifications) ens = CreateNotificationEntries(ev, notifications);
+
+			ev.Notifications = ens.ToArray();
 
 			database.Events.Add(ev);
 			try
