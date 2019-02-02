@@ -11,8 +11,11 @@ namespace Betty.databases.guilds
 		[Key]
 		public ulong NotificationId { get; set; }
 		
+		[Required]
 		public EventTB Event { get; set; }
-		public DateTime DateTime { get; set; }
+		[Required]
+		public DateTime Date { get; set; }
+		[Required]
 		public string ResponseKeyword { get; set; }
 	}
 }

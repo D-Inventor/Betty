@@ -10,6 +10,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Betty.utilities;
+using Betty.databases.guilds;
 
 namespace Betty.commands
 {
@@ -36,7 +37,10 @@ namespace Betty.commands
 			// indicate that the bot is working on the command
 			await Context.Channel.TriggerTypingAsync();
 
-			statecollection.SetPublicChannel(Context.Guild, Context.Channel.Id);
+			// apply change and report to user
+			GuildTB gtb = statecollection.GetGuildEntry(Context.Guild);
+			gtb.Public = Context.Channel.Id;
+			statecollection.SetGuildEntry(gtb);
 			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.public"));
 		}
 
@@ -49,7 +53,10 @@ namespace Betty.commands
 			// indicate that the bot is working on the command
 			await Context.Channel.TriggerTypingAsync();
 
-			statecollection.SetNotificationChannel(Context.Guild, Context.Channel.Id);
+			// apply change and report to user
+			GuildTB gtb = statecollection.GetGuildEntry(Context.Guild);
+			gtb.Notification = Context.Channel.Id;
+			statecollection.SetGuildEntry(gtb);
 			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.notification"));
 		}
 

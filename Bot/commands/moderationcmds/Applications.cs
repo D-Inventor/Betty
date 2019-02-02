@@ -10,6 +10,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
 using Betty.utilities;
+using Betty.databases.guilds;
 
 namespace Betty.commands
 {
@@ -40,10 +41,12 @@ namespace Betty.commands
 			// indicate that the bot is working on the command
 			await Context.Channel.TriggerTypingAsync();
 
-			var language = statecollection.GetLanguage(Context.Guild);
+			GuildTB dbentry = statecollection.GetGuildEntry(Context.Guild);
+
+			var language = statecollection.GetLanguage(Context.Guild, dbentry);
 
 			// allow only 1 application per guild
-			if (statecollection.GetApplicationActive(Context.Guild))
+			if (statecollection.GetApplicationEntry(Context.Guild) != null)
 			{
 				await Context.Channel.SendMessageAsync(language.GetString("command.appstart.isactive"));
 				return;
@@ -81,18 +84,12 @@ namespace Betty.commands
 			}
 
 			// creation must succeed
-			IInviteMetadata invite = await statecollection.StartApplication(Context.Guild, utcdeadline);
+			IInviteMetadata invite = await statecollection.StartApplication(Context.Guild, utcdeadline, dbentry);
 			if (invite == null)
 			{
 				await Context.Channel.SendMessageAsync(language.GetString("command.appstart.error"));
 				return;
 			}
-			
-			// create notifications and store cancellation token
-			var ctoken = notifier.CreateWaiterTask(Context.Guild, statecollection.GetApplicationChannel(Context.Guild), messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, utcdeadline, "Application selection")
-							, action: async() => await ExpireAppLink(Context.Guild));
-
-			statecollection.SetApplicationToken(Context.Guild, ctoken);
 
 			// return success to the user
 			await Context.Channel.SendMessageAsync(language.GetString("command.appstart.success", new SentenceContext()
@@ -109,41 +106,16 @@ namespace Betty.commands
 			await Context.Channel.TriggerTypingAsync();
 
 			// make sure that applications are taking place
-			if (!statecollection.GetApplicationActive(Context.Guild))
+			ApplicationTB appentry = statecollection.GetApplicationEntry(Context.Guild);
+			if (appentry == null)
 			{
 				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.appstop.noapp"));
 				return;
 			}
 
-			// try to cancel further notifications
-			var token = statecollection.GetApplicationToken(Context.Guild);
-			if(token == null)
-			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "Commands", $"Attempted to cancel notifier, but failed: Cancellation token is null"));
-			}
-			else
-			{
-				token.Cancel();
-				statecollection.SetApplicationToken(Context.Guild, null);
-			}
-
-			await ExpireAppLink(Context.Guild);
-
-			await statecollection.StopApplication(Context.Guild);
+			// stop the applications
+			await statecollection.StopApplication(Context.Guild, appentry);
 			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.appstop.success"));
-		}
-
-		private async Task ExpireAppLink(SocketGuild guild)
-		{
-			try
-			{
-				var invite = await statecollection.GetApplicationInvite(guild);
-				await invite?.DeleteAsync();
-			}
-			catch (Exception e)
-			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "Commands", $"Attempted to delete invitation in '{guild.Name}', but failed: {e.Message}", e));
-			}
 		}
 	}
 }

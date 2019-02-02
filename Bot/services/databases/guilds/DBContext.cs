@@ -18,10 +18,10 @@ namespace Betty.databases.guilds
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
-			modelBuilder.Entity<GuildTB>()
-				.HasOne(p => p.Application)
-				.WithOne(i => i.Guild)
-				.HasForeignKey<ApplicationTB>(b => b.GuildId);
+			modelBuilder.Entity<ApplicationTB>()
+				.HasOne(p => p.Guild)
+				.WithOne(i => i.Application)
+				.HasForeignKey("ApplicationTB");
 
 			modelBuilder.Entity<GuildTB>()
 				.HasMany(p => p.Events)

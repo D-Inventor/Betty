@@ -140,7 +140,7 @@ namespace Betty.utilities
 			}
 
 			// wait until the date has passed
-			await Task.Delay(date - DateTime.UtcNow, token);
+			if (!token.IsCancellationRequested) await Task.Delay(date - DateTime.UtcNow, token);
 		}
 
 		public static IEnumerable<TimedMessage> BuildMessageList(IEnumerable<TimeSpan> offsets, DateTime deadline, string name)

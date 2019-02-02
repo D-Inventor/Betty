@@ -18,21 +18,16 @@ namespace Betty.Migrations
 
             modelBuilder.Entity("Betty.databases.guilds.ApplicationTB", b =>
                 {
-                    b.Property<ulong>("ApplicationId")
-                        .ValueGeneratedOnAdd();
+                    b.Property<ulong>("ApplicationId");
 
                     b.Property<ulong>("Channel");
 
                     b.Property<DateTime>("Deadline");
 
-                    b.Property<ulong>("GuildId");
-
-                    b.Property<string>("InviteID");
+                    b.Property<string>("InviteID")
+                        .IsRequired();
 
                     b.HasKey("ApplicationId");
-
-                    b.HasIndex("GuildId")
-                        .IsUnique();
 
                     b.ToTable("Applications");
                 });
@@ -42,11 +37,12 @@ namespace Betty.Migrations
                     b.Property<ulong>("NotificationId")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<DateTime>("DateTime");
+                    b.Property<DateTime>("Date");
 
-                    b.Property<ulong?>("EventId");
+                    b.Property<ulong>("EventId");
 
-                    b.Property<string>("ResponseKeyword");
+                    b.Property<string>("ResponseKeyword")
+                        .IsRequired();
 
                     b.HasKey("NotificationId");
 
@@ -62,9 +58,10 @@ namespace Betty.Migrations
 
                     b.Property<DateTime>("Date");
 
-                    b.Property<ulong?>("GuildId");
+                    b.Property<ulong>("GuildId");
 
-                    b.Property<string>("Name");
+                    b.Property<string>("Name")
+                        .IsRequired();
 
                     b.Property<ulong?>("NotificationChannel");
 
@@ -80,9 +77,11 @@ namespace Betty.Migrations
                     b.Property<ulong>("GuildId")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("Language");
+                    b.Property<string>("Language")
+                        .IsRequired();
 
-                    b.Property<string>("Name");
+                    b.Property<string>("Name")
+                        .IsRequired();
 
                     b.Property<ulong?>("Notification");
 
@@ -97,7 +96,7 @@ namespace Betty.Migrations
                 {
                     b.HasOne("Betty.databases.guilds.GuildTB", "Guild")
                         .WithOne("Application")
-                        .HasForeignKey("Betty.databases.guilds.ApplicationTB", "GuildId")
+                        .HasForeignKey("Betty.databases.guilds.ApplicationTB", "ApplicationId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
@@ -105,14 +104,16 @@ namespace Betty.Migrations
                 {
                     b.HasOne("Betty.databases.guilds.EventTB", "Event")
                         .WithMany("Notifications")
-                        .HasForeignKey("EventId");
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Betty.databases.guilds.EventTB", b =>
                 {
                     b.HasOne("Betty.databases.guilds.GuildTB", "Guild")
                         .WithMany("Events")
-                        .HasForeignKey("GuildId");
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618
         }

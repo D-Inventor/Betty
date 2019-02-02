@@ -9,9 +9,11 @@ namespace Betty.databases.guilds
 	{
 		[Key]
 		public ulong EventId { get; set; }
-		
+		[Required]
 		public GuildTB Guild { get; set; }
+		[Required]
 		public string Name { get; set; }
+		[Required]
 		public DateTime Date { get; set; }
 		public ulong? NotificationChannel { get; set; }
 		public ICollection<EventNotificationTB> Notifications { get; set; }

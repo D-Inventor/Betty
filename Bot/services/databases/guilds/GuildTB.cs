@@ -8,8 +8,9 @@ namespace Betty.databases.guilds
 	{
 		[Key]
 		public ulong GuildId { get; set; }
-
+		[Required]
 		public string Name { get; set; }
+		[Required]
 		public string Language { get; set; }
 		public ulong? Public { get; set; }
 		public ulong? Notification { get; set; }

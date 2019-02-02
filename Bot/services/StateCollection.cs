@@ -8,7 +8,7 @@ using Discord.WebSocket;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using GuildCollection = System.Collections.Generic.Dictionary<ulong, Betty.GuildState>;
+using GuildCollection = System.Collections.Concurrent.ConcurrentDictionary<ulong, Betty.GuildState>;
 using Betty.utilities;
 using Betty.databases.guilds;
 using System.Collections.Generic;
@@ -18,10 +18,13 @@ namespace Betty
 {
 	public class StateCollection
 	{
+		#region fields
 		GuildCollection guildCollection;
 		GuildDB database;
 		Logger logger;
 		Constants constants;
+		Notifier notifier;
+		#endregion
 
 		public StateCollection(IServiceProvider services)
 		{
@@ -29,217 +32,288 @@ namespace Betty
 			database = services.GetService<GuildDB>();
 			logger = services.GetService<Logger>();
 			constants = services.GetService<Constants>();
+			notifier = services.GetService<NotifierFactory>().Create(this);
 		}
 
+		public async Task RestoreApplication(SocketGuild guild)
+		{
+			// check if this guild has applications
+			ApplicationTB application = GetApplicationEntry(guild);
+			if(application == null)
+			{
+				logger.Log(new LogMessage(LogSeverity.Info, "State", $"'{guild.Name}' currently has no application and will therefore not be restored"));
+				return;
+			}
+			
+			// create notifier
+			SocketTextChannel channel = GetApplicationChannel(guild, application);
+			IInviteMetadata invite = await GetApplicationInvite(guild, application, channel);
+			var token = notifier.CreateWaiterTask(guild, channel, messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, application.Deadline, "Application selection"), action: async () =>
+			{
+				await ExpireAppLink(invite);
+			});
+
+			SetApplicationToken(guild, token);
+		}
+
+		#region getters
 		public GuildTB GetGuildEntry(SocketGuild guild)
 		{
-			//query the database
-			var dbresult = from g in database.Guilds
-						   where g.GuildId == guild.Id
-						   select g;
+			// try to read the database for a guild entry
+			GuildTB dbresult = (from g in database.Guilds
+								where g.GuildId == guild.Id
+								select g).FirstOrDefault();
 
-			GuildTB result;
-
-			// if there was no entry for given guild, create a default new one
-			if (!dbresult.Any())
+			// if there was no entry, create a default entry
+			if (dbresult == null)
 			{
-				logger.Log(new LogMessage(LogSeverity.Info, "State", $"There is no data available yet for {guild.Name}, create new data"));
-				result = CreateDefaultGuild(guild);
+				// push to log and create new entry
+				logger.Log(new LogMessage(LogSeverity.Info, "State", $"No database entry was found for '{guild.Name}'. Creating a new one"));
+				dbresult = CreateDefaultGuild(guild);
 			}
 
-			// otherwise read the entry from the database
-			else
-			{
-				result = dbresult.First();
-			}
-
-			return result;
+			return dbresult;
 		}
 
-		public SocketTextChannel GetPublicChannel(SocketGuild guild)
+		public SocketTextChannel GetPublicChannel(SocketGuild guild, GuildTB dbentry = null)
 		{
-			// get the data from the database
-			GuildTB dbresult = GetGuildEntry(guild);
-			if (!dbresult.Public.HasValue) return null;
+			// try to use the database entry if present
+			if (dbentry == null) dbentry = GetGuildEntry(guild);
+
+			// get the channel
+			return GetChannel(guild, dbentry.Public);
+		}
+
+		public SocketTextChannel GetNotificationChannel(SocketGuild guild, GuildTB dbentry = null)
+		{
+			// try to use the database entry if present
+			if (dbentry == null) dbentry = GetGuildEntry(guild);
+
+			// get the channel
+			return GetChannel(guild, dbentry.Notification);
+		}
+
+		public SocketTextChannel GetNotificationElsePublicChannel(SocketGuild guild, GuildTB dbentry = null)
+		{
+			if (dbentry == null) dbentry = GetGuildEntry(guild);
+			return GetNotificationChannel(guild, dbentry) ?? GetPublicChannel(guild, dbentry);
+		}
+
+		public StringConverter GetLanguage(SocketGuild guild, GuildTB dbentry = null)
+		{
+			// make sure that the dbentry is not null
+			if (dbentry == null) dbentry = GetGuildEntry(guild);
+
+			// make sure that there is a state for this guild
+			if (!guildCollection.ContainsKey(guild.Id))
+			{
+				logger.Log(new LogMessage(LogSeverity.Info, "State", $"No state was found for '{guild.Name}'. Creating a new one with the database"));
+				return CreateDefaultState(guild, dbentry).Language;
+			}
+
+			// return the language
+			return guildCollection[guild.Id].Language;
+		}
+
+		private SocketTextChannel GetChannel(SocketGuild guild, ulong? channelid)
+		{
+			// check if a public channel was assigned
+			if (channelid == null) return null;
 
 			try
 			{
 				// try to get the channel from discord
-				return guild.GetTextChannel(dbresult.Public.Value);
-			}
-			catch(Exception e)
-			{
-				// log failure, set channel to null and return null
-				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to get public text channel from '{guild.Name}', but failed: {e.Message}", e));
-				dbresult.Public = null;
-				database.Guilds.Update(dbresult);
-				database.SaveChanges();
-				return null;
-			}
-		}
-
-		public void SetPublicChannel(SocketGuild guild, ulong? channel)
-		{
-			// get the data from the database
-			GuildTB dbresult = GetGuildEntry(guild);
-
-			// change and push back
-			dbresult.Public = channel;
-			database.Guilds.Update(dbresult);
-			database.SaveChanges();
-		}
-
-		public SocketTextChannel GetNotificationChannel(SocketGuild guild)
-		{
-			// get the data from the database
-			GuildTB dbresult = GetGuildEntry(guild);
-			if (!dbresult.Notification.HasValue) return null;
-
-			try
-			{
-				// try to get the channel from discord
-				return guild.GetTextChannel(dbresult.Notification.Value);
+				return guild.GetTextChannel(channelid.Value);
 			}
 			catch (Exception e)
 			{
-				// log failure, set channel to null and return null
-				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to get notification text channel from '{guild.Name}', but failed: {e.Message}", e));
-				dbresult.Notification = null;
-				database.Guilds.Update(dbresult);
-				database.SaveChanges();
+				// log failure
+				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to get text channel from '{guild.Name}', but failed: {e.Message}\n{e.StackTrace}"));
 				return null;
 			}
 		}
 
-		public void SetNotificationChannel(SocketGuild guild, ulong? channel)
+		public ApplicationTB GetApplicationEntry(SocketGuild guild)
 		{
-			// get the data from the database
-			GuildTB dbresult = GetGuildEntry(guild);
-
-			// change and push back
-			dbresult.Notification = channel;
-			database.Guilds.Update(dbresult);
-			database.SaveChanges();
+			return (from app in database.Applications
+					where app.Guild.GuildId == guild.Id
+					select app).FirstOrDefault();
 		}
 
-		public SocketTextChannel GetNotificationElsePublic(SocketGuild guild)
+		private bool GetApplicationEntry(SocketGuild guild, ref ApplicationTB application)
 		{
-			// return notification channel if present, or public channel otherwise.
-			return GetNotificationChannel(guild) ?? GetPublicChannel(guild);
+			// make sure that there are indeed applications going
+			if (application == null)
+			{
+				application = GetApplicationEntry(guild);
+				if (application == null) return false;
+			}
+
+			return true;
 		}
 
-		public StringConverter GetLanguage(SocketGuild guild)
+		public SocketTextChannel GetApplicationChannel(SocketGuild guild, ApplicationTB application = null)
 		{
-			// make sure that the language is loaded.
-			if (!guildCollection.ContainsKey(guild.Id))
-				guildCollection.Add(guild.Id, CreateDefaultState(guild));
+			// make sure that there are indeed applications
+			if (!GetApplicationEntry(guild, ref application)) return null;
 
-			// return the language for given guild.
-			return guildCollection[guild.Id].Language;
+			// return the channel
+			return GetChannel(guild, application.Channel);
+		}
+
+		public async Task<IInviteMetadata> GetApplicationInvite(SocketGuild guild, ApplicationTB application = null, SocketTextChannel channel = null)
+		{
+			// make sure that there are indeed applications
+			if (!GetApplicationEntry(guild, ref application)) return null;
+
+			// get the channel where the invite comes from
+			if(channel == null)
+			{
+				channel = GetChannel(guild, application.Channel);
+				if (channel == null) return null;
+			}
+
+			IEnumerable<IInviteMetadata> invites;
+			try
+			{
+				// try to get the invites from discord
+				invites = await channel.GetInvitesAsync();
+			}
+			catch(Exception e)
+			{
+				// log failure and return
+				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to read invites from '{guild.Name}', but failed: {e.Message}\n{e.StackTrace}"));
+				return null;
+			}
+
+			// return the invite
+			return invites.FirstOrDefault(x => x.Id == application.InviteID);
 		}
 
 		public CancellationTokenSource GetApplicationToken(SocketGuild guild)
 		{
+			// if there's not state, then there's no application token
 			if (!guildCollection.ContainsKey(guild.Id)) return null;
+
+			// return the token
 			return guildCollection[guild.Id].ApplicationToken;
 		}
+		#endregion
 
-		public void SetApplicationToken(SocketGuild guild, CancellationTokenSource token)
+		#region setters
+		public void SetGuildEntry(GuildTB dbentry)
 		{
-			if (!guildCollection.ContainsKey(guild.Id))
-				guildCollection.Add(guild.Id, CreateDefaultState(guild));
+			// check if the language is still up to date
+			if (guildCollection.ContainsKey(dbentry.GuildId) && guildCollection[dbentry.GuildId].Language.Name != dbentry.Language)
+			{
+				guildCollection[dbentry.GuildId].Language = StringConverter.LoadFromFile(constants.PathToLanguage(dbentry.Language), logger);
+			}
 
+			// send changes to database
+			database.Guilds.Update(dbentry);
+
+			try
+			{
+				database.SaveChanges();
+			}
+			catch(Exception e)
+			{
+				// log failure
+				logger.Log(new LogMessage(LogSeverity.Error, "State", $"Attempted to save guild changes to database, but failed: {e.Message}\n{e.StackTrace}"));
+			}
+		}
+
+		public void SetApplicationToken(SocketGuild guild, CancellationTokenSource token, GuildTB dbentry = null)
+		{
+			// make sure that dbentry is not null
+			if (dbentry == null) dbentry = GetGuildEntry(guild);
+
+			// make sure that there is a guild state
+			if (!guildCollection.ContainsKey(guild.Id)) CreateDefaultState(guild, dbentry);
+
+			// set the token
 			guildCollection[guild.Id].ApplicationToken = token;
 		}
+		#endregion
 
-		public bool GetApplicationActive(SocketGuild guild)
+		#region application
+		public async Task<IInviteMetadata> StartApplication(SocketGuild guild, DateTime deadline, GuildTB dbentry = null)
 		{
-			// return whether or not applications are active for given guild.
-			GuildTB dbresult = GetGuildEntry(guild);
 
-			return dbresult.Application != null;
+			if(dbentry == null) dbentry = GetGuildEntry(guild);
+
+			// create a channel
+			var channel = await CreateApplicationChannel(guild, dbentry);
+			if (channel == null) return null;
+
+			// create an invite
+			var invite = await CreateApplicationInvite(guild, channel, dbentry);
+			if (invite == null) return null;
+
+			// save to database
+			if (!SaveApplicationToDatabase(dbentry, deadline, channel, invite)) return null;
+
+			// set a notifier
+			var token = notifier.CreateWaiterTask(guild, GetApplicationChannel(guild), messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, deadline, "Application selection"), action: async() =>
+			{
+				await ExpireAppLink(invite);
+			});
+			SetApplicationToken(guild, token, dbentry);
+
+			return invite;
 		}
 
-		public SocketTextChannel GetApplicationChannel(SocketGuild guild)
+		private async Task ExpireAppLink(IInviteMetadata invite)
 		{
-			// find the application in the database
-			var dbresult = from app in database.Applications
-						   where app.GuildId == guild.Id
-						   select app.Channel;
-
-			// return null if there is no application currently
-			if (!dbresult.Any()) return null;
-
-			// attempt to get the text channel with given id
-			ulong channelid = dbresult.First();
-
 			try
 			{
-				return guild.GetTextChannel(channelid);
+				// try to delete the invite
+				await invite.DeleteAsync();
 			}
 			catch(Exception e)
 			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to get application text channel from '{guild.Name}', but failed: {e.Message}", e));
-				return null;
+				// log failure
+				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to delete invite, but failed: {e.Message}\n{e.StackTrace}"));
 			}
 		}
 
-		public async Task<IInviteMetadata> GetApplicationInvite(SocketGuild guild)
+		private bool SaveApplicationToDatabase(GuildTB dbentry, DateTime deadline, ITextChannel channel, IInviteMetadata invite)
 		{
-			// find the invite id in the database
-			var dbresult = from app in database.Applications
-						   where app.GuildId == guild.Id
-						   select app;
+			// create entry
+			ApplicationTB appdbentry = new ApplicationTB
+			{
+				Deadline = deadline,
+				InviteID = invite.Id,
+				Channel = channel.Id,
+				Guild = dbentry,
+			};
+			database.Applications.Add(appdbentry);
 
-			// if there's no application, return null
-			if (!dbresult.Any()) return null;
-
-			ApplicationTB entry = dbresult.First();
-			string invite = entry.InviteID;
-
-			// try to find the invite in the application channel
 			try
 			{
-				SocketTextChannel channel = guild.GetTextChannel(entry.Channel);
-				return (await channel.GetInvitesAsync()).FirstOrDefault(x => x.Id == invite);
+				// try to save to database
+				database.SaveChanges();
+				return true;
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to get invite on {guild.Name}, but failed: Couldn't get text channel: {e.Message}", e));
-				return null;
+				// log failure
+				logger.Log(new LogMessage(LogSeverity.Error, "State", $"Attempted to save application to database, but failed: {e.Message}\n{e.StackTrace}"));
+				return false;
 			}
 		}
 
-		public DateTime? GetApplicationDeadline(SocketGuild guild)
+		private async Task<ITextChannel> CreateApplicationChannel(SocketGuild guild, GuildTB dbentry)
 		{
-			// query the database for the deadline
-			var dbresult = from app in database.Applications
-						   where app.GuildId == guild.Id
-						   select app.Deadline;
+			logger.Log(new LogMessage(LogSeverity.Info, "State", $"Creating an application channel for {guild.Name}."));
 
-			// return the date if present or null otherwise
-			if (!dbresult.Any()) return null;
-			return dbresult.First();
-		}
-
-		public async Task<IInviteMetadata> StartApplication(SocketGuild guild, DateTime deadline)
-		{
-			// check if there are already applications going
-			var dbresultapp = from app in database.Applications
-							  where app.GuildId == guild.Id
-							  select app;
-
-			if (dbresultapp.Any()) return null;
-
-			// find the category in which the public channel resides
-			GuildTB gtb = GetGuildEntry(guild);
+			// find the correct category
 			SocketCategoryChannel category = null;
-
-			if (gtb.Public.HasValue)
+			if(dbentry.Public != null)
 			{
-				foreach (var c in guild.CategoryChannels)
+				foreach(var c in guild.CategoryChannels)
 				{
-					if (c.Channels.Any(x => x.Id == gtb.Public.Value))
+					if(c.Channels.Any(x => x.Id == dbentry.Public))
 					{
 						category = c;
 						break;
@@ -247,98 +321,113 @@ namespace Betty
 				}
 			}
 
-			ITextChannel appchannel;
 			try
 			{
-				// create an application channel under given category
-				appchannel = await guild.CreateTextChannelAsync("applications", x =>
+				// try to create a text channel
+				return await guild.CreateTextChannelAsync("Applications", (x) =>
 				{
-					if (category != null) x.CategoryId = category.Id;
-					x.Topic = "If you're interested in our community: Write an application here!";
+					x.Topic = "Are you interested in our community? Write your application here!";
+					x.CategoryId = category.Id;
 				});
 			}
 			catch(Exception e)
 			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Attempted to create application channel in '{guild.Name}', but failed: {e.Message}", e));
+				// report failure
+				logger.Log(new LogMessage(LogSeverity.Error, "State", $"Attempted to create a channel for '{guild.Name}', but failed: {e.Message}\n{e.StackTrace}"));
 				return null;
 			}
-
-			IInviteMetadata invite;
-			try
-			{
-				// create an invite link to the public channel or the application channel
-				invite = await appchannel.CreateInviteAsync(maxAge: null);
-			}
-			catch(Exception e)
-			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Attempted to create invite in '{guild.Name}', but failed: {e.Message}", e));
-				return null;
-			}
-
-			database.Applications.Add(new ApplicationTB
-			{
-				Channel = appchannel.Id,
-				Deadline = deadline,
-				Guild = gtb,
-				InviteID = invite.Id,
-			});
-
-			try
-			{
-				await database.SaveChangesAsync();
-			}
-			catch(Exception e)
-			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to save application to database, but failed: {e.Message}\n{e.StackTrace}"));
-			}
-
-			return invite;
 		}
-		
-		public async Task StopApplication(SocketGuild guild)
+
+		private async Task<IInviteMetadata> CreateApplicationInvite(SocketGuild guild, ITextChannel channel, GuildTB dbentry)
 		{
-			// check if there were applications in the first place
-			var dbresult = from app in database.Applications
-						   where app.GuildId == guild.Id
-						   select app;
-
-			if (!dbresult.Any()) return;
-			ApplicationTB atb = dbresult.First();
-
-			// destroy applications channel
+			logger.Log(new LogMessage(LogSeverity.Info, "State", $"Creating an invite for {guild.Name}"));
 			try
 			{
-				var appchannel = guild.GetTextChannel(atb.Channel);
-				await appchannel.DeleteAsync();
+				return await channel.CreateInviteAsync(null, null, false, false);
 			}
 			catch(Exception e)
 			{
-				logger.Log(new LogMessage(LogSeverity.Warning, "Settings", $"Attempted to delete application channel in '{guild.Name}', but failed: {e.Message}", e));
-			}
-
-			database.Applications.Remove(atb);
-			await database.SaveChangesAsync();
-		}
-
-		public async Task<IInviteMetadata> GetInviteByID(SocketTextChannel channel, string inviteID)
-		{
-			IReadOnlyCollection<IInviteMetadata> invites;
-			try
-			{
-				// try to get invites for given channel
-				invites = await channel.GetInvitesAsync();
-			}
-			catch(Exception e)
-			{
-				// log failure and return nothing
-				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to load invites from {channel.Name}, but failed: {e.Message}"));
+				logger.Log(new LogMessage(LogSeverity.Error, "State", $"Attempted to create invite for '{guild.Name}', but failed: {e.Message}\n{e.StackTrace}"));
 				return null;
 			}
-
-			// try to find given invite in list
-			return invites.FirstOrDefault(x => x.Id == inviteID);
 		}
 
+		public async Task<bool> StopApplication(SocketGuild guild, ApplicationTB appentry)
+		{
+			// make sure that there is indeed a state with a token
+			if (!guildCollection.ContainsKey(guild.Id)) return false;
+
+			// cancel notifier
+			logger.Log(new LogMessage(LogSeverity.Info, "State", $"Cancelling application notifier for '{guild.Name}'"));
+			if (!CancelApplicationNotifier(guild)) return false;
+
+			// delete the invite
+			logger.Log(new LogMessage(LogSeverity.Info, "State", $"Deleting invite for '{guild.Name}'."));
+			await ExpireAppLink(await GetApplicationInvite(guild, appentry));
+
+			// delete the channel
+			logger.Log(new LogMessage(LogSeverity.Info, "State", $"Deleting application channel for '{guild.Name}'"));
+			await DeleteApplicationChannel(guild, appentry);
+
+			// delete from the database
+			RemoveApplicationFromDatabase(appentry);
+
+			return true;
+		}
+
+		private bool RemoveApplicationFromDatabase(ApplicationTB appentry)
+		{
+			database.Applications.Remove(appentry);
+
+			try
+			{
+				//try to apply removal to database
+				database.SaveChanges();
+				return true;
+			}
+			catch(Exception e)
+			{
+				//log failure
+				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to remove application from database, but failed: {e.Message}\n{e.StackTrace}"));
+				return false;
+			}
+		}
+
+		private bool CancelApplicationNotifier(SocketGuild guild)
+		{
+			// cancel the token
+			var token = guildCollection[guild.Id].ApplicationToken;
+			if (token == null)
+			{
+				logger.Log(new LogMessage(LogSeverity.Error, "State", $"Attempted to cancel notification, but failed: token was null."));
+				return false;
+			}
+			token.Cancel();
+			guildCollection[guild.Id].ApplicationToken = null;
+
+			return true;
+		}
+
+		private async Task<bool> DeleteApplicationChannel(SocketGuild guild, ApplicationTB appentry)
+		{
+			var channel = GetChannel(guild, appentry.Channel);
+
+			try
+			{
+				// try to delete the channel
+				await channel.DeleteAsync();
+				return true;
+			}
+			catch(Exception e)
+			{
+				// log failure
+				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to delete application channel for '{guild.Name}', but failed: {e.Message}\n{e.StackTrace}"));
+				return false;
+			}
+		}
+		#endregion
+
+		#region default creators
 		private GuildTB CreateDefaultGuild(SocketGuild guild)
 		{
 			GuildTB result = new GuildTB
@@ -355,14 +444,21 @@ namespace Betty
 			return result;
 		}
 
-		private GuildState CreateDefaultState(SocketGuild guild)
+		private GuildState CreateDefaultState(SocketGuild guild, GuildTB dbentry)
 		{
-			GuildTB dbresult = GetGuildEntry(guild);
-			StringConverter language = StringConverter.LoadFromFile(constants.PathToLanguage(dbresult.Language), logger);
-			return new GuildState
+			StringConverter language = StringConverter.LoadFromFile(constants.PathToLanguage(dbentry.Language), logger);
+			GuildState state = new GuildState
 			{
 				Language = language,
 			};
+
+			if(!guildCollection.TryAdd(guild.Id, state))
+			{
+				logger.Log(new LogMessage(LogSeverity.Error, "State", $"Attempted to add new state to state collection, but failed."));
+			}
+
+			return state;
 		}
+		#endregion
 	}
 }

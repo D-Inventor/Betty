@@ -10,11 +10,11 @@ namespace Betty.databases.guilds
 	{
 		[Key]
 		public ulong ApplicationId { get; set; }
-		
-		public ulong GuildId { get; set; }
+		[Required]
 		public GuildTB Guild { get; set; }
-
+		[Required]
 		public ulong Channel { get; set; }
+		[Required]
 		public string InviteID { get; set; }
 		public DateTime Deadline { get; set; }
 	}

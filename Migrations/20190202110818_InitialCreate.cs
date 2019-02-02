@@ -13,8 +13,8 @@ namespace Betty.Migrations
                 {
                     GuildId = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(nullable: true),
-                    Language = table.Column<string>(nullable: true),
+                    Name = table.Column<string>(nullable: false),
+                    Language = table.Column<string>(nullable: false),
                     Public = table.Column<ulong>(nullable: true),
                     Notification = table.Column<ulong>(nullable: true)
                 },
@@ -27,19 +27,17 @@ namespace Betty.Migrations
                 name: "Applications",
                 columns: table => new
                 {
-                    ApplicationId = table.Column<ulong>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    GuildId = table.Column<ulong>(nullable: false),
+                    ApplicationId = table.Column<ulong>(nullable: false),
                     Channel = table.Column<ulong>(nullable: false),
-                    InviteID = table.Column<string>(nullable: true),
+                    InviteID = table.Column<string>(nullable: false),
                     Deadline = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Applications", x => x.ApplicationId);
                     table.ForeignKey(
-                        name: "FK_Applications_Guilds_GuildId",
-                        column: x => x.GuildId,
+                        name: "FK_Applications_Guilds_ApplicationId",
+                        column: x => x.ApplicationId,
                         principalTable: "Guilds",
                         principalColumn: "GuildId",
                         onDelete: ReferentialAction.Cascade);
@@ -51,8 +49,8 @@ namespace Betty.Migrations
                 {
                     EventId = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    GuildId = table.Column<ulong>(nullable: true),
-                    Name = table.Column<string>(nullable: true),
+                    GuildId = table.Column<ulong>(nullable: false),
+                    Name = table.Column<string>(nullable: false),
                     Date = table.Column<DateTime>(nullable: false),
                     NotificationChannel = table.Column<ulong>(nullable: true)
                 },
@@ -64,7 +62,7 @@ namespace Betty.Migrations
                         column: x => x.GuildId,
                         principalTable: "Guilds",
                         principalColumn: "GuildId",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -73,9 +71,9 @@ namespace Betty.Migrations
                 {
                     NotificationId = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    EventId = table.Column<ulong>(nullable: true),
-                    DateTime = table.Column<DateTime>(nullable: false),
-                    ResponseKeyword = table.Column<string>(nullable: true)
+                    EventId = table.Column<ulong>(nullable: false),
+                    Date = table.Column<DateTime>(nullable: false),
+                    ResponseKeyword = table.Column<string>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -85,14 +83,8 @@ namespace Betty.Migrations
                         column: x => x.EventId,
                         principalTable: "Events",
                         principalColumn: "EventId",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Applications_GuildId",
-                table: "Applications",
-                column: "GuildId",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_EventNotifications_EventId",

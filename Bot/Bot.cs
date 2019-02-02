@@ -17,7 +17,7 @@ using Betty.utilities;
 
 namespace Betty
 {
-	public class Bot
+	public class Bot : IDisposable
 	{
 		// discord environment
 		DiscordSocketClient client;
@@ -48,6 +48,7 @@ namespace Betty
 			analysis = new Analysis(services);
 		}
 
+		#region public interface
 		public async Task<bool> Init()
 		{
 			// initiate logger process
@@ -80,15 +81,6 @@ namespace Betty
 			return true;
 		}
 
-		private void SetupEventSubscriptions()
-		{
-			client.Log += Client_Log;
-			client.Ready += Client_Ready;
-			client.GuildAvailable += Client_GuildAvailable;
-			client.MessageReceived += Client_MessageReceived;
-			client.UserJoined += Client_UserJoined;
-		}
-
 		public async Task Start()
 		{
 			// try to login
@@ -113,22 +105,38 @@ namespace Betty
 		{
 			logger.Dispose();
 		}
+		#endregion
 
-		public IServiceProvider BuildServiceProvider() => new ServiceCollection()
+		#region private methods
+		private void SetupEventSubscriptions()
+		{
+			client.Log += Client_Log;
+			client.Ready += Client_Ready;
+			client.GuildAvailable += Client_GuildAvailable_RestoreApplication;
+			//client.GuildAvailable += Client_GuildAvailable_RestoreEvents;
+			client.MessageReceived += Client_MessageReceived;
+			client.UserJoined += Client_UserJoined;
+		}
+
+		private IServiceProvider BuildServiceProvider() => new ServiceCollection()
 			.AddSingleton<Constants>()
 			.AddDbContext<GuildDB>()
 			.AddSingleton(x => new Logger(x))
 			.AddSingleton(x => new StateCollection(x))
-			.AddSingleton(x => new Notifier(x))
+			.AddSingleton(x => new NotifierFactory(x))
 			.AddSingleton(x => new Settings(x))
 			.AddSingleton(x => new Agenda(x))
 			.BuildServiceProvider();
+		#endregion
 
+		#region event listeners
 		private async Task Client_UserJoined(SocketGuildUser user)
 		{
+			// find the public channel of given guild
 			var sc = statecollection.GetPublicChannel(user.Guild);
 			if (sc == null) return;
 
+			// add some delays to make Betty's response seem more natural
 			await Task.Delay(10000);
 			await sc.TriggerTypingAsync();
 			await Task.Delay(3000);
@@ -170,33 +178,25 @@ namespace Betty
 		
 		private async Task Client_Ready()
 		{
+			// set playing game to respository url
 			await client.SetGameAsync(@"https://github.com/D-Inventor/Betty");
 		}
 		
-		private async Task Client_GuildAvailable(SocketGuild guild)
+		private async Task Client_GuildAvailable_RestoreApplication(SocketGuild guild)
 		{
-			// check if this guild was having applications and create the notifications if necessary
-			if (statecollection.GetApplicationActive(guild))
-			{
-				logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Reading application data from database for {guild.Name}"));
+			// ask state collection to restore application and log start and finish
+			logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Restoring application for '{guild.Name}'"));
+			await statecollection.RestoreApplication(guild);
+			logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Successfully restored application for '{guild.Name}'"));
+		}
 
-				// create notifications and store cancellation token
-				var ctoken = notifier.CreateWaiterTask(guild, statecollection.GetApplicationChannel(guild), messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, statecollection.GetApplicationDeadline(guild).Value, "Application selection")
-								, action: async () =>
-								{
-									IInviteMetadata invite = await statecollection.GetApplicationInvite(guild);
-									try
-									{
-										await invite?.DeleteAsync();
-									}
-									catch(Exception e)
-									{
-										logger.Log(new LogMessage(LogSeverity.Warning, "Commands", $"Attempted to delete invitation in {guild.Name}, but failed: {e.Message}"));
-									}
-								});
-
-				statecollection.SetApplicationToken(guild, ctoken);
-			}
+		private Task Client_GuildAvailable_RestoreEvents(SocketGuild guild)
+		{
+			// ask agenda to restore events and log start and finish
+			logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Restoring events for '{guild.Name}'"));
+			agenda.RestoreGuildEvents(guild);
+			logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Successfully restored events for '{guild.Name}'"));
+			return Task.CompletedTask;
 		}
 
 		private Task Client_Log(LogMessage msg)
@@ -205,5 +205,6 @@ namespace Betty
 			logger.Log(msg);
 			return Task.CompletedTask;
 		}
+		#endregion
 	}
 }

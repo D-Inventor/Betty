@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Betty
 {
-	public class Logger
+	public class Logger : IDisposable
 	{
 		Constants constants;
 
@@ -38,15 +38,18 @@ namespace Betty
 
 		public void Log(LogMessage msg)
 		{
+			// put message in the queue and signal that there are new messages to be logged
 			logQueue.Enqueue($"[{DateTime.UtcNow}] [{msg.Severity.ToString().PadRight(8)}] {msg.Source.PadLeft(10)}: {msg.Message}");
 			loggingFlag.Set();
 		}
 
 		public void Dispose()
 		{
+			// signal the logger thread to quit
 			DisposeFlag = true;
 			loggingFlag.Set();
 
+			// wait for logger thread to finish
 			DisposeReady.Wait();
 		}
 
