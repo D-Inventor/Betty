@@ -31,60 +31,69 @@ namespace Betty.commands
 		[Command("public"), Summary("Sets the public channel to null")]
 		public async Task unset_public([Remainder]string input = null)
 		{
-			// log command execution
-			CommandMethods.LogExecution(logger, "unset public", Context);
+			using (var database = new GuildDB())
+			{
+				// log command execution
+				CommandMethods.LogExecution(logger, "unset public", Context);
 
-			// indicate that the bot is working on the command
-			await Context.Channel.TriggerTypingAsync();
+				// indicate that the bot is working on the command
+				await Context.Channel.TriggerTypingAsync();
 
-			// apply change and report to user
-			GuildTB gtb = statecollection.GetGuildEntry(Context.Guild);
-			gtb.Public = null;
-			statecollection.SetGuildEntry(gtb);
-			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.unset.public"));
+				// apply change and report to user
+				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				gtb.Public = null;
+				statecollection.SetGuildEntry(gtb, database);
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.unset.public"));
+			}
 		}
 
 		[Command("notification"), Alias("notifications"), Summary("Sets the notification channel to null")]
 		public async Task unset_notification([Remainder]string input = null)
 		{
-			// log command execution
-			CommandMethods.LogExecution(logger, "unset notification", Context);
+			using (var database = new GuildDB())
+			{
+				// log command execution
+				CommandMethods.LogExecution(logger, "unset notification", Context);
 
-			// indicate that the bot is working on the command
-			await Context.Channel.TriggerTypingAsync();
+				// indicate that the bot is working on the command
+				await Context.Channel.TriggerTypingAsync();
 
-			// apply change and report to user
-			GuildTB gtb = statecollection.GetGuildEntry(Context.Guild);
-			gtb.Notification = null;
-			statecollection.SetGuildEntry(gtb);
-			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.unset.notification"));
+				// apply change and report to user
+				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				gtb.Notification = null;
+				statecollection.SetGuildEntry(gtb, database);
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.unset.notification"));
+			}
 		}
 
 		[Command("timezones"), Alias("timezone"), Summary("Removes all the roles for performing time queries")]
 		public async Task unset_timezones([Remainder]string input = null)
 		{
-			// log command execution
-			CommandMethods.LogExecution(logger, "unset timezones", Context);
-
-			// indicate that the bot is working on the command
-			await Context.Channel.TriggerTypingAsync();
-
-			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.unset.timezones.wait"));
-
-			// find all the current roles in the guild
-			IEnumerable<KeyValuePair<string, ulong>> roles = Context.Guild.Roles.Select(r => new KeyValuePair<string, ulong>(r.Name, r.Id));
-
-			// delete all the roles that are timezones
-			foreach (var t in roles)
+			using (var database = new GuildDB())
 			{
-				if (DateTimeMethods.IsTimezone(t.Key))
-				{
-					await Context.Guild.GetRole(t.Value).DeleteAsync();
-				}
-			}
+				// log command execution
+				CommandMethods.LogExecution(logger, "unset timezones", Context);
 
-			await Context.Channel.TriggerTypingAsync();
-			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.unset.timezones.done"));
+				// indicate that the bot is working on the command
+				await Context.Channel.TriggerTypingAsync();
+
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.unset.timezones.wait"));
+
+				// find all the current roles in the guild
+				IEnumerable<KeyValuePair<string, ulong>> roles = Context.Guild.Roles.Select(r => new KeyValuePair<string, ulong>(r.Name, r.Id));
+
+				// delete all the roles that are timezones
+				foreach (var t in roles)
+				{
+					if (DateTimeMethods.IsTimezone(t.Key))
+					{
+						await Context.Guild.GetRole(t.Value).DeleteAsync();
+					}
+				}
+
+				await Context.Channel.TriggerTypingAsync();
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.unset.timezones.done"));
+			}
 		}
 	}
 }

@@ -31,73 +31,82 @@ namespace Betty.commands
 		[Command("public"), Summary("Sets the channel of execution as the public channel")]
 		public async Task set_public([Remainder]string input = null)
 		{
-			// log command execution
-			CommandMethods.LogExecution(logger, "set public", Context);
+			using(var database = new GuildDB())
+			{
+				// log command execution
+				CommandMethods.LogExecution(logger, "set public", Context);
 
-			// indicate that the bot is working on the command
-			await Context.Channel.TriggerTypingAsync();
+				// indicate that the bot is working on the command
+				await Context.Channel.TriggerTypingAsync();
 
-			// apply change and report to user
-			GuildTB gtb = statecollection.GetGuildEntry(Context.Guild);
-			gtb.Public = Context.Channel.Id;
-			statecollection.SetGuildEntry(gtb);
-			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.public"));
+				// apply change and report to user
+				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				gtb.Public = Context.Channel.Id;
+				statecollection.SetGuildEntry(gtb, database);
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.set.public"));
+			}
 		}
 
 		[Command("notification"), Alias("notifications"), Summary("Sets the channel of execution as the notification channel")]
 		public async Task set_notification([Remainder]string input = null)
 		{
-			// log command execution
-			CommandMethods.LogExecution(logger, "set notification", Context);
+			using(var database = new GuildDB())
+			{
+				// log command execution
+				CommandMethods.LogExecution(logger, "set notification", Context);
 
-			// indicate that the bot is working on the command
-			await Context.Channel.TriggerTypingAsync();
+				// indicate that the bot is working on the command
+				await Context.Channel.TriggerTypingAsync();
 
-			// apply change and report to user
-			GuildTB gtb = statecollection.GetGuildEntry(Context.Guild);
-			gtb.Notification = Context.Channel.Id;
-			statecollection.SetGuildEntry(gtb);
-			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.notification"));
+				// apply change and report to user
+				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				gtb.Notification = Context.Channel.Id;
+				statecollection.SetGuildEntry(gtb, database);
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.set.notification"));
+			}
 		}
 
 		[Command("timezones"), Alias("timezone"), Summary("Goes through all the timezones and creates/updates them accordingly")]
 		public async Task set_timezones([Remainder]string input = null)
 		{
-			// log command execution
-			CommandMethods.LogExecution(logger, "set timezones", Context);
-
-			// indicate that the bot is working on the command
-			await Context.Channel.TriggerTypingAsync();
-
-			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.timezones.wait"));
-
-			// find all the current roles in the guild
-			IEnumerable<SocketRole> present = from role in Context.Guild.Roles
-											  where DateTimeMethods.IsTimezone(role.Name)
-											  select role;
-
-			// add all the timezones that are not present already
-			foreach (string t in DateTimeMethods.Timezones())
+			using(var database = new GuildDB())
 			{
-				if (!present.Any(x => x.Name == t))
+				// log command execution
+				CommandMethods.LogExecution(logger, "set timezones", Context);
+
+				// indicate that the bot is working on the command
+				await Context.Channel.TriggerTypingAsync();
+
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.set.timezones.wait"));
+
+				// find all the current roles in the guild
+				IEnumerable<SocketRole> present = from role in Context.Guild.Roles
+												  where DateTimeMethods.IsTimezone(role.Name)
+												  select role;
+
+				// add all the timezones that are not present already
+				foreach (string t in DateTimeMethods.Timezones())
 				{
-					await Context.Guild.CreateRoleAsync(t, isHoisted: false, permissions: constants.RolePermissions);
+					if (!present.Any(x => x.Name == t))
+					{
+						await Context.Guild.CreateRoleAsync(t, isHoisted: false, permissions: constants.RolePermissions);
+					}
 				}
-			}
 
-			// update the roles of the timezones that áre present
-			foreach(SocketRole sr in present)
-			{
-				await sr.ModifyAsync((x) =>
+				// update the roles of the timezones that áre present
+				foreach(SocketRole sr in present)
 				{
-					x.Permissions = constants.RolePermissions;
-					x.Mentionable = true;
-				});
-			}
+					await sr.ModifyAsync((x) =>
+					{
+						x.Permissions = constants.RolePermissions;
+						x.Mentionable = true;
+					});
+				}
 
-			// return success to the user
-			await Context.Channel.TriggerTypingAsync();
-			await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild).GetString("command.set.timezones.done"));
+				// return success to the user
+				await Context.Channel.TriggerTypingAsync();
+				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.set.timezones.done"));
+			}
 		}
 	}
 }

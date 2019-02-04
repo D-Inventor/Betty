@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Discord.Commands;
 
 using Betty.utilities;
+using Betty.databases.guilds;
 
 namespace Betty
 {
@@ -20,31 +21,34 @@ namespace Betty
 
 		public async Task AnalyseTime(SocketCommandContext Context)
 		{
-			DateTime now = DateTime.UtcNow;
+			using (var database = new GuildDB())
+			{
+				DateTime now = DateTime.UtcNow;
 
-			// check if the text contains a time indication
-			TimeSpan? FoundTime = DateTimeMethods.StringToTime(Context.Message.Content, false);
-			if (!FoundTime.HasValue) return;
+				// check if the text contains a time indication
+				TimeSpan? FoundTime = DateTimeMethods.StringToTime(Context.Message.Content, false);
+				if (!FoundTime.HasValue) return;
 
-			// check if the user has a timezone applied
-			TimeZoneInfo tz = DateTimeMethods.UserToTimezone(Context.User);
-			if (tz == null) return;
+				// check if the user has a timezone applied
+				TimeZoneInfo tz = DateTimeMethods.UserToTimezone(Context.User);
+				if (tz == null) return;
 
-			// indicate that the bot is working on the answer
-			await Context.Channel.TriggerTypingAsync();
+				// indicate that the bot is working on the answer
+				await Context.Channel.TriggerTypingAsync();
 
-			var language = statecollection.GetLanguage(Context.Guild);
+				var language = statecollection.GetLanguage(Context.Guild, database);
 
-			// find the desired date time in the local time
-			DateTime dt = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0) + FoundTime.Value;
+				// find the desired date time in the local time
+				DateTime dt = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0) + FoundTime.Value;
 
-			// print the table to the chat
-			string result = DateTimeMethods.TimetableToString(DateTimeMethods.LocalTimeToTimetable(dt, tz, Context.Guild));
-			await Context.Channel.SendMessageAsync(language.GetString("scan.time.found"));
+				// print the table to the chat
+				string result = DateTimeMethods.TimetableToString(DateTimeMethods.LocalTimeToTimetable(dt, tz, Context.Guild));
+				await Context.Channel.SendMessageAsync(language.GetString("scan.time.found"));
 
-			await Context.Channel.TriggerTypingAsync();
-			await Context.Channel.SendMessageAsync(result);
-			return;
+				await Context.Channel.TriggerTypingAsync();
+				await Context.Channel.SendMessageAsync(result);
+				return;
+			}
 		}
 	}
 }

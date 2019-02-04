@@ -31,7 +31,6 @@ namespace Betty
 		Constants constants;
 		Logger logger;
 		StateCollection statecollection;
-		GuildDB database;
 		Notifier notifier;
 
 		public Bot()
@@ -43,7 +42,6 @@ namespace Betty
 			constants = services.GetService<Constants>();
 			logger = services.GetService<Logger>();
 			statecollection = services.GetService<StateCollection>();
-			database = services.GetService<GuildDB>();
 			notifier = services.GetService<Notifier>();
 			analysis = new Analysis(services);
 		}
@@ -88,9 +86,9 @@ namespace Betty
 			{
 				await client.LoginAsync(TokenType.Bot, settings.Token);
 			}
-			catch(Discord.Net.HttpException e)
+			catch (Exception e)
 			{
-				logger.Log(new LogMessage(LogSeverity.Error, "Bot", $"Attempted to log in, but failed: {e.Reason}", e));
+				logger.Log(new LogMessage(LogSeverity.Error, "Bot", $"Attempted to log in, but failed: {e.Message}", e));
 				return;
 			}
 
@@ -120,7 +118,6 @@ namespace Betty
 
 		private IServiceProvider BuildServiceProvider() => new ServiceCollection()
 			.AddSingleton<Constants>()
-			.AddDbContext<GuildDB>()
 			.AddSingleton(x => new Logger(x))
 			.AddSingleton(x => new StateCollection(x))
 			.AddSingleton(x => new NotifierFactory(x))
@@ -132,17 +129,20 @@ namespace Betty
 		#region event listeners
 		private async Task Client_UserJoined(SocketGuildUser user)
 		{
-			// find the public channel of given guild
-			var sc = statecollection.GetPublicChannel(user.Guild);
-			if (sc == null) return;
+			using (var database = new GuildDB())
+			{
+				// find the public channel of given guild
+				var sc = statecollection.GetPublicChannel(user.Guild, database);
+				if (sc == null) return;
 
-			// add some delays to make Betty's response seem more natural
-			await Task.Delay(10000);
-			await sc.TriggerTypingAsync();
-			await Task.Delay(3000);
-			var language = statecollection.GetLanguage(user.Guild);
-			await sc.SendMessageAsync(language.GetString("event.join", new SentenceContext()
-																			.Add("mention", user.Mention)));
+				// add some delays to make Betty's response seem more natural
+				await Task.Delay(10000);
+				await sc.TriggerTypingAsync();
+				await Task.Delay(3000);
+				var language = statecollection.GetLanguage(user.Guild, database);
+				await sc.SendMessageAsync(language.GetString("event.join", new SentenceContext()
+																				.Add("mention", user.Mention)));
+			}
 		}
 
 		private async Task Client_MessageReceived(SocketMessage arg)
@@ -154,7 +154,7 @@ namespace Betty
 			// make sure that the message is valid and from a valid source
 			if (context.Message == null || context.Message.Content == "") return;
 			if (context.User.IsBot) return;
-			
+
 			// make sure that only users who are member can use the bot
 			if (!(context.User as SocketGuildUser).Roles.Select(r => r.Name).Contains("Member")) return;
 
@@ -175,18 +175,19 @@ namespace Betty
 				await analysis.AnalyseTime(context);
 			}
 		}
-		
+
 		private async Task Client_Ready()
 		{
 			// set playing game to respository url
 			await client.SetGameAsync(@"https://github.com/D-Inventor/Betty");
 		}
-		
+
 		private async Task Client_GuildAvailable_RestoreApplication(SocketGuild guild)
 		{
 			// ask state collection to restore application and log start and finish
 			logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Restoring application for '{guild.Name}'"));
-			await statecollection.RestoreApplication(guild);
+			using (var database = new GuildDB())
+				await statecollection.RestoreApplication(guild, database);
 			logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Successfully restored application for '{guild.Name}'"));
 		}
 
@@ -194,7 +195,8 @@ namespace Betty
 		{
 			// ask agenda to restore events and log start and finish
 			logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Restoring events for '{guild.Name}'"));
-			agenda.RestoreGuildEvents(guild);
+			using (var database = new GuildDB())
+				agenda.RestoreGuildEvents(guild, database);
 			logger.Log(new LogMessage(LogSeverity.Info, "Bot", $"Successfully restored events for '{guild.Name}'"));
 			return Task.CompletedTask;
 		}

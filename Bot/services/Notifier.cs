@@ -11,6 +11,7 @@ using Discord;
 using Discord.WebSocket;
 
 using Betty.utilities;
+using Betty.databases.guilds;
 
 namespace Betty
 {
@@ -40,7 +41,7 @@ namespace Betty
 			logger = services.GetService<Logger>();
 		}
 
-		public CancellationTokenSource CreateWaiterTask(SocketGuild guild, SocketTextChannel channel, bool doNotifications = true, IEnumerable<TimedMessage> messages = null, Action action = null)
+		public CancellationTokenSource CreateWaiterTask(SocketGuild guild, SocketTextChannel channel, bool doNotifications = true, IEnumerable<TimedMessage> messages = null, Action<GuildDB> action = null)
 		{
 			// create tokensource for cancellation
 			var tokensource = new CancellationTokenSource();
@@ -67,9 +68,12 @@ namespace Betty
 							await DateTimeMethods.WaitForDate(m.Date, token);
 							if (doNotifications && !token.IsCancellationRequested)
 							{
-								// send given message to discord
-								var c = channel ?? statecollection.GetNotificationElsePublicChannel(guild);
-								await c.SendMessageAsync(statecollection.GetLanguage(guild).GetString(m.Keyword, m.Context));
+								using(var database = new GuildDB())
+								{
+									// send given message to discord
+									var c = channel ?? statecollection.GetNotificationElsePublicChannel(guild, database);
+									await c.SendMessageAsync(statecollection.GetLanguage(guild, database).GetString(m.Keyword, m.Context));
+								}
 							}
 						}
 						catch (TaskCanceledException) { }
@@ -86,7 +90,8 @@ namespace Betty
 
 				// perform the action once all the messages have passed
 				if (!token.IsCancellationRequested)
-					action?.Invoke();
+					using (var database = new GuildDB())
+						action?.Invoke(database);
 
 				logger.Log(new LogMessage(LogSeverity.Info, "Notifier", $"Finished waiter task for '{guild.Name}'"));
 			});

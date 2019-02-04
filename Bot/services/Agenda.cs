@@ -18,7 +18,6 @@ namespace Betty
 	{
 		#region Fields
 		Logger logger;
-		GuildDB database;
 		StateCollection statecollection;
 		Notifier notifier;
 		Constants constants;
@@ -29,7 +28,6 @@ namespace Betty
 		public Agenda(IServiceProvider services)
 		{
 			logger = services.GetRequiredService<Logger>();
-			database = services.GetRequiredService<GuildDB>();
 			statecollection = services.GetRequiredService<StateCollection>();
 			notifier = services.GetRequiredService<NotifierFactory>().Create(statecollection);
 			constants = services.GetRequiredService<Constants>();
@@ -38,10 +36,10 @@ namespace Betty
 		}
 
 		#region Public interface
-		public void RestoreGuildEvents(SocketGuild guild)
+		public void RestoreGuildEvents(SocketGuild guild, GuildDB database)
 		{
 			// get all events and notifications for this guild
-			var evs = GetEvents(guild);
+			var evs = GetEvents(guild, database);
 			foreach(var ev in evs)
 			{
 				// find corresponding notifications
@@ -50,7 +48,7 @@ namespace Betty
 						  select en;
 
 				// make sure that given event is still valid
-				if (!CheckEventValidity(ev, ens)) continue;
+				if (!CheckEventValidity(ev, ens, database)) continue;
 
 				// get event channel
 				logger.Log(new LogMessage(LogSeverity.Info, "Agenda", $"Getting text channel for '{ev.Name}' from '{guild.Name}'"));
@@ -58,9 +56,9 @@ namespace Betty
 
 				// create a waiter event
 				logger.Log(new LogMessage(LogSeverity.Info, "Agenda", $"Creating waiter task for '{ev.Name}' from '{guild.Name}'"));
-				var token = notifier.CreateWaiterTask(guild, channel, messages: TimedMessagesFromEvent(new EventAndNotifications { Event = ev, Notifications = ens }), action: () =>
+				var token = notifier.CreateWaiterTask(guild, channel, messages: TimedMessagesFromEvent(new EventAndNotifications { Event = ev, Notifications = ens.ToArray() }), action: (db) =>
 				{
-					Cancel(ev);
+					Cancel(ev, db);
 				});
 				
 				// store cancellation token
@@ -72,15 +70,15 @@ namespace Betty
 			}
 		}
 
-		public bool Plan(SocketGuild guild, string name, DateTime date, SocketTextChannel channel = null, bool doNotifications = true, TimeSpan[] notifications = null)
+		public bool Plan(SocketGuild guild, GuildDB database, string name, DateTime date, SocketTextChannel channel = null, bool doNotifications = true, TimeSpan[] notifications = null)
 		{
 			// generate database data
-			var ev = StoreEventInDatabase(guild, name, date, channel, doNotifications, notifications);
+			var ev = StoreEventInDatabase(guild, database, name, date, channel, doNotifications, notifications);
 
 			// create notifier for this event
-			var token = notifier.CreateWaiterTask(guild, null, messages: DateTimeMethods.BuildMessageList(constants.EventNotifications, ev.Event.Date, ev.Event.Name), action: () =>
+			var token = notifier.CreateWaiterTask(guild, null, messages: DateTimeMethods.BuildMessageList(constants.EventNotifications, ev.Event.Date, ev.Event.Name), action: (db) =>
 			{
-				Cancel(ev.Event);
+				Cancel(ev.Event, db);
 			});
 
 			// store cancellation token
@@ -94,7 +92,7 @@ namespace Betty
 			return true;
 		}
 
-		public bool Cancel(SocketGuild guild, string name)
+		public bool Cancel(SocketGuild guild, GuildDB database, string name)
 		{
 			// get the corresponding event from the database
 			var ev = (from e in database.Events
@@ -109,20 +107,20 @@ namespace Betty
 			CancelNotifier(ev);
 
 			// remove from database
-			return RemoveEventFromDatabase(ev);
+			return RemoveEventFromDatabase(ev, database);
 		}
 
-		public bool Cancel(EventTB Event)
+		public bool Cancel(EventTB Event, GuildDB database)
 		{
 			// cancel the notifications
 			CancelNotifier(Event);
 
 			// remove from the database
-			return RemoveEventFromDatabase(Event);
+			return RemoveEventFromDatabase(Event, database);
 		}
 
 		#region Getters
-		public IEnumerable<EventTB> GetEvents(SocketGuild guild)
+		public IEnumerable<EventTB> GetEvents(SocketGuild guild, GuildDB database)
 		{
 			return from e in database.Events
 				   where e.Guild.GuildId == guild.Id
@@ -133,10 +131,10 @@ namespace Betty
 		#endregion
 
 		#region Private methods
-		private EventAndNotifications StoreEventInDatabase(SocketGuild guild, string name, DateTime date, SocketTextChannel channel = null, bool doNotifications = true, IEnumerable<TimeSpan> notifications = null)
+		private EventAndNotifications StoreEventInDatabase(SocketGuild guild, GuildDB database, string name, DateTime date, SocketTextChannel channel = null, bool doNotifications = true, IEnumerable<TimeSpan> notifications = null)
 		{
 			// Get the data for this guild
-			GuildTB g = statecollection.GetGuildEntry(guild);
+			GuildTB g = statecollection.GetGuildEntry(guild, database);
 
 			// first plan the event
 			EventTB ev = new EventTB
@@ -172,7 +170,7 @@ namespace Betty
 			};
 		}
 
-		private bool RemoveEventFromDatabase(EventTB ev)
+		private bool RemoveEventFromDatabase(EventTB ev, GuildDB database)
 		{
 			// get all the notifications from the database
 			var en = from e in database.EventNotifications
@@ -234,7 +232,7 @@ namespace Betty
 			}
 		}
 
-		private bool CheckEventValidity(EventTB ev, IEnumerable<EventNotificationTB> ens)
+		private bool CheckEventValidity(EventTB ev, IEnumerable<EventNotificationTB> ens, GuildDB database)
 		{
 			// check if this event has already passed
 			if (ev.Date < DateTime.UtcNow)
@@ -267,7 +265,7 @@ namespace Betty
 
 		private void CancelNotifier(EventTB ev)
 		{
-			notifiercollection.Remove(ev.EventId, out CancellationTokenSource token);
+			if(!notifiercollection.Remove(ev.EventId, out CancellationTokenSource token)) logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Something went wrong while cancelling the event {ev.Name}"));
 			token.Cancel();
 		}
 		#endregion

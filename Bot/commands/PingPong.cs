@@ -7,6 +7,7 @@ using Discord;
 using Discord.Commands;
 
 using Betty.utilities;
+using Betty.databases.guilds;
 
 namespace Betty.commands
 {
@@ -24,20 +25,23 @@ namespace Betty.commands
 		[Command("ping"), Summary("Returns the ball like a pro")]
 		public async Task Ping([Remainder]string input = null)
 		{
-			// log command execution
-			CommandMethods.LogExecution(logger, "ping", Context);
-
-			// indicate that the bot is working on the command
-			await Context.Channel.TriggerTypingAsync();
-
-			try
+			using (var database = new GuildDB())
 			{
-				string response = statecollection.GetLanguage(Context.Guild).GetString("command.ping");
-				await Context.Channel.SendMessageAsync(response);
-			}
-			catch(Exception e)
-			{
-				logger.Log(new LogMessage(LogSeverity.Error, "Commands", $"Attempted to ping, but failed: {e.Message}\n{e.StackTrace}"));
+				// log command execution
+				CommandMethods.LogExecution(logger, "ping", Context);
+
+				// indicate that the bot is working on the command
+				await Context.Channel.TriggerTypingAsync();
+
+				try
+				{
+					string response = statecollection.GetLanguage(Context.Guild, database).GetString("command.ping");
+					await Context.Channel.SendMessageAsync(response);
+				}
+				catch (Exception e)
+				{
+					logger.Log(new LogMessage(LogSeverity.Error, "Commands", $"Attempted to ping, but failed: {e.Message}\n{e.StackTrace}"));
+				}
 			}
 		}
 	}

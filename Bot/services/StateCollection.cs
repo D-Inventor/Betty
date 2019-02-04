@@ -20,7 +20,6 @@ namespace Betty
 	{
 		#region fields
 		GuildCollection guildCollection;
-		GuildDB database;
 		Logger logger;
 		Constants constants;
 		Notifier notifier;
@@ -29,16 +28,15 @@ namespace Betty
 		public StateCollection(IServiceProvider services)
 		{
 			guildCollection = new GuildCollection();
-			database = services.GetService<GuildDB>();
 			logger = services.GetService<Logger>();
 			constants = services.GetService<Constants>();
 			notifier = services.GetService<NotifierFactory>().Create(this);
 		}
 
-		public async Task RestoreApplication(SocketGuild guild)
+		public async Task RestoreApplication(SocketGuild guild, GuildDB database)
 		{
 			// check if this guild has applications
-			ApplicationTB application = GetApplicationEntry(guild);
+			ApplicationTB application = GetApplicationEntry(guild, database);
 			if(application == null)
 			{
 				logger.Log(new LogMessage(LogSeverity.Info, "State", $"'{guild.Name}' currently has no application and will therefore not be restored"));
@@ -46,18 +44,18 @@ namespace Betty
 			}
 			
 			// create notifier
-			SocketTextChannel channel = GetApplicationChannel(guild, application);
-			IInviteMetadata invite = await GetApplicationInvite(guild, application, channel);
-			var token = notifier.CreateWaiterTask(guild, channel, messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, application.Deadline, "Application selection"), action: async () =>
+			SocketTextChannel channel = GetApplicationChannel(guild, database, application);
+			IInviteMetadata invite = await GetApplicationInvite(guild, database, application, channel);
+			var token = notifier.CreateWaiterTask(guild, channel, messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, application.Deadline, "Application selection"), action: async (db) =>
 			{
 				await ExpireAppLink(invite);
 			});
 
-			SetApplicationToken(guild, token);
+			SetApplicationToken(guild, database, token);
 		}
 
 		#region getters
-		public GuildTB GetGuildEntry(SocketGuild guild)
+		public GuildTB GetGuildEntry(SocketGuild guild, GuildDB database)
 		{
 			// try to read the database for a guild entry
 			GuildTB dbresult = (from g in database.Guilds
@@ -69,40 +67,40 @@ namespace Betty
 			{
 				// push to log and create new entry
 				logger.Log(new LogMessage(LogSeverity.Info, "State", $"No database entry was found for '{guild.Name}'. Creating a new one"));
-				dbresult = CreateDefaultGuild(guild);
+				dbresult = CreateDefaultGuild(guild, database);
 			}
 
 			return dbresult;
 		}
 
-		public SocketTextChannel GetPublicChannel(SocketGuild guild, GuildTB dbentry = null)
+		public SocketTextChannel GetPublicChannel(SocketGuild guild, GuildDB database, GuildTB dbentry = null)
 		{
 			// try to use the database entry if present
-			if (dbentry == null) dbentry = GetGuildEntry(guild);
+			if (dbentry == null) dbentry = GetGuildEntry(guild, database);
 
 			// get the channel
 			return GetChannel(guild, dbentry.Public);
 		}
 
-		public SocketTextChannel GetNotificationChannel(SocketGuild guild, GuildTB dbentry = null)
+		public SocketTextChannel GetNotificationChannel(SocketGuild guild, GuildDB database, GuildTB dbentry = null)
 		{
 			// try to use the database entry if present
-			if (dbentry == null) dbentry = GetGuildEntry(guild);
+			if (dbentry == null) dbentry = GetGuildEntry(guild, database);
 
 			// get the channel
 			return GetChannel(guild, dbentry.Notification);
 		}
 
-		public SocketTextChannel GetNotificationElsePublicChannel(SocketGuild guild, GuildTB dbentry = null)
+		public SocketTextChannel GetNotificationElsePublicChannel(SocketGuild guild, GuildDB database, GuildTB dbentry = null)
 		{
-			if (dbentry == null) dbentry = GetGuildEntry(guild);
-			return GetNotificationChannel(guild, dbentry) ?? GetPublicChannel(guild, dbentry);
+			if (dbentry == null) dbentry = GetGuildEntry(guild, database);
+			return GetNotificationChannel(guild, database, dbentry) ?? GetPublicChannel(guild, database, dbentry);
 		}
 
-		public StringConverter GetLanguage(SocketGuild guild, GuildTB dbentry = null)
+		public StringConverter GetLanguage(SocketGuild guild, GuildDB database, GuildTB dbentry = null)
 		{
 			// make sure that the dbentry is not null
-			if (dbentry == null) dbentry = GetGuildEntry(guild);
+			if (dbentry == null) dbentry = GetGuildEntry(guild, database);
 
 			// make sure that there is a state for this guild
 			if (!guildCollection.ContainsKey(guild.Id))
@@ -133,38 +131,38 @@ namespace Betty
 			}
 		}
 
-		public ApplicationTB GetApplicationEntry(SocketGuild guild)
+		public ApplicationTB GetApplicationEntry(SocketGuild guild, GuildDB database)
 		{
 			return (from app in database.Applications
 					where app.Guild.GuildId == guild.Id
 					select app).FirstOrDefault();
 		}
 
-		private bool GetApplicationEntry(SocketGuild guild, ref ApplicationTB application)
+		private bool GetApplicationEntry(SocketGuild guild, GuildDB database, ref ApplicationTB application)
 		{
 			// make sure that there are indeed applications going
 			if (application == null)
 			{
-				application = GetApplicationEntry(guild);
+				application = GetApplicationEntry(guild, database);
 				if (application == null) return false;
 			}
 
 			return true;
 		}
 
-		public SocketTextChannel GetApplicationChannel(SocketGuild guild, ApplicationTB application = null)
+		public SocketTextChannel GetApplicationChannel(SocketGuild guild, GuildDB database, ApplicationTB application = null)
 		{
 			// make sure that there are indeed applications
-			if (!GetApplicationEntry(guild, ref application)) return null;
+			if (!GetApplicationEntry(guild, database, ref application)) return null;
 
 			// return the channel
 			return GetChannel(guild, application.Channel);
 		}
 
-		public async Task<IInviteMetadata> GetApplicationInvite(SocketGuild guild, ApplicationTB application = null, SocketTextChannel channel = null)
+		public async Task<IInviteMetadata> GetApplicationInvite(SocketGuild guild, GuildDB database, ApplicationTB application = null, SocketTextChannel channel = null)
 		{
 			// make sure that there are indeed applications
-			if (!GetApplicationEntry(guild, ref application)) return null;
+			if (!GetApplicationEntry(guild, database, ref application)) return null;
 
 			// get the channel where the invite comes from
 			if(channel == null)
@@ -201,7 +199,7 @@ namespace Betty
 		#endregion
 
 		#region setters
-		public void SetGuildEntry(GuildTB dbentry)
+		public void SetGuildEntry(GuildTB dbentry, GuildDB database)
 		{
 			// check if the language is still up to date
 			if (guildCollection.ContainsKey(dbentry.GuildId) && guildCollection[dbentry.GuildId].Language.Name != dbentry.Language)
@@ -223,10 +221,10 @@ namespace Betty
 			}
 		}
 
-		public void SetApplicationToken(SocketGuild guild, CancellationTokenSource token, GuildTB dbentry = null)
+		public void SetApplicationToken(SocketGuild guild, GuildDB database, CancellationTokenSource token, GuildTB dbentry = null)
 		{
 			// make sure that dbentry is not null
-			if (dbentry == null) dbentry = GetGuildEntry(guild);
+			if (dbentry == null) dbentry = GetGuildEntry(guild, database);
 
 			// make sure that there is a guild state
 			if (!guildCollection.ContainsKey(guild.Id)) CreateDefaultState(guild, dbentry);
@@ -237,10 +235,10 @@ namespace Betty
 		#endregion
 
 		#region application
-		public async Task<IInviteMetadata> StartApplication(SocketGuild guild, DateTime deadline, GuildTB dbentry = null)
+		public async Task<IInviteMetadata> StartApplication(SocketGuild guild, GuildDB database, DateTime deadline, GuildTB dbentry = null)
 		{
 
-			if(dbentry == null) dbentry = GetGuildEntry(guild);
+			if(dbentry == null) dbentry = GetGuildEntry(guild, database);
 
 			// create a channel
 			var channel = await CreateApplicationChannel(guild, dbentry);
@@ -251,14 +249,14 @@ namespace Betty
 			if (invite == null) return null;
 
 			// save to database
-			if (!SaveApplicationToDatabase(dbentry, deadline, channel, invite)) return null;
+			if (!SaveApplicationToDatabase(dbentry, deadline, channel, invite, database)) return null;
 
 			// set a notifier
-			var token = notifier.CreateWaiterTask(guild, GetApplicationChannel(guild), messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, deadline, "Application selection"), action: async() =>
+			var token = notifier.CreateWaiterTask(guild, GetApplicationChannel(guild, database), messages: DateTimeMethods.BuildMessageList(constants.ApplicationNotifications, deadline, "Application selection"), action: async(db) =>
 			{
 				await ExpireAppLink(invite);
 			});
-			SetApplicationToken(guild, token, dbentry);
+			SetApplicationToken(guild, database, token, dbentry);
 
 			return invite;
 		}
@@ -277,7 +275,7 @@ namespace Betty
 			}
 		}
 
-		private bool SaveApplicationToDatabase(GuildTB dbentry, DateTime deadline, ITextChannel channel, IInviteMetadata invite)
+		private bool SaveApplicationToDatabase(GuildTB dbentry, DateTime deadline, ITextChannel channel, IInviteMetadata invite, GuildDB database)
 		{
 			// create entry
 			ApplicationTB appdbentry = new ApplicationTB
@@ -352,7 +350,7 @@ namespace Betty
 			}
 		}
 
-		public async Task<bool> StopApplication(SocketGuild guild, ApplicationTB appentry)
+		public async Task<bool> StopApplication(SocketGuild guild, GuildDB database, ApplicationTB appentry)
 		{
 			// make sure that there is indeed a state with a token
 			if (!guildCollection.ContainsKey(guild.Id)) return false;
@@ -363,19 +361,19 @@ namespace Betty
 
 			// delete the invite
 			logger.Log(new LogMessage(LogSeverity.Info, "State", $"Deleting invite for '{guild.Name}'."));
-			await ExpireAppLink(await GetApplicationInvite(guild, appentry));
+			await ExpireAppLink(await GetApplicationInvite(guild, database, appentry));
 
 			// delete the channel
 			logger.Log(new LogMessage(LogSeverity.Info, "State", $"Deleting application channel for '{guild.Name}'"));
 			await DeleteApplicationChannel(guild, appentry);
 
 			// delete from the database
-			RemoveApplicationFromDatabase(appentry);
+			RemoveApplicationFromDatabase(appentry, database);
 
 			return true;
 		}
 
-		private bool RemoveApplicationFromDatabase(ApplicationTB appentry)
+		private bool RemoveApplicationFromDatabase(ApplicationTB appentry, GuildDB database)
 		{
 			database.Applications.Remove(appentry);
 
@@ -428,7 +426,7 @@ namespace Betty
 		#endregion
 
 		#region default creators
-		private GuildTB CreateDefaultGuild(SocketGuild guild)
+		private GuildTB CreateDefaultGuild(SocketGuild guild, GuildDB database)
 		{
 			GuildTB result = new GuildTB
 			{
