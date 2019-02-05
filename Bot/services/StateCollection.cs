@@ -325,7 +325,7 @@ namespace Betty
 				return await guild.CreateTextChannelAsync("Applications", (x) =>
 				{
 					x.Topic = "Are you interested in our community? Write your application here!";
-					x.CategoryId = category.Id;
+					x.CategoryId = category?.Id;
 				});
 			}
 			catch(Exception e)
