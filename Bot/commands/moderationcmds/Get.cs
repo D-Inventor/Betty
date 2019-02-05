@@ -56,11 +56,6 @@ namespace Betty.commands
 
 				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database, gtb).GetString("present"));
 				await Context.Channel.SendMessageAsync(result.ToString());
-
-
-				EmbedBuilder embed = new EmbedBuilder()
-					.WithCurrentTimestamp()
-					.WithTitle($"Status information for '{gtb.Name}'");
 			}
 		}
 	}
