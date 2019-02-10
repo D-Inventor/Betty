@@ -42,7 +42,25 @@ namespace Betty
 				logger.Log(new LogMessage(LogSeverity.Info, "State", $"'{guild.Name}' currently has no application and will therefore not be restored"));
 				return;
 			}
-			
+
+			// make sure that there is not an already active notifier
+			//  (This could happen, because GuildAvailable gets called when Betty loses connection with discord)
+			CancellationTokenSource t = GetApplicationToken(guild);
+			if(t != null)
+			{
+				if (!t.IsCancellationRequested)
+				{
+					// if it's still active, there is no need to restore the application
+					logger.Log(new LogMessage(LogSeverity.Warning, "State", $"There is already a notifier for this application. Skipping the application"));
+					return;
+				}
+				else
+				{
+					// if it's not active, then there is something wrong with the code, but then a new notifier can be created still
+					logger.Log(new LogMessage(LogSeverity.Error, "State", $"Found a notifier, but cancellation was requested. This should never happen!!"));
+				}
+			}
+
 			// create notifier
 			SocketTextChannel channel = GetApplicationChannel(guild, database, application);
 			IInviteMetadata invite = await GetApplicationInvite(guild, database, application, channel);

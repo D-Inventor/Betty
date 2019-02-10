@@ -50,6 +50,26 @@ namespace Betty
 				// make sure that given event is still valid
 				if (!CheckEventValidity(ev, ens, database)) continue;
 
+				// check to see if there is currently a notification active for this guild already
+				//  (This is possible, because GuildAvailable gets called when connection to discord is interupted for a longer period)
+				if (notifiercollection.ContainsKey(ev.EventId))
+				{
+					// check to see if this event was cancelled or not
+					if (!notifiercollection[ev.EventId].IsCancellationRequested)
+					{
+						logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Found an already active notifier for event '{ev.Name}', skipping this event."));
+						continue;
+					}
+					else
+					{
+						logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Found an event notifier for event '{ev.Name}', but it was cancelled."));
+						if(!notifiercollection.TryRemove(ev.EventId, out CancellationTokenSource t))
+						{
+							logger.Log(new LogMessage(LogSeverity.Error, "Agenda", $"Attempted to removed cancelled event, but failed! This should never happen!!"));
+						}
+					}
+				}
+
 				// get event channel
 				logger.Log(new LogMessage(LogSeverity.Info, "Agenda", $"Getting text channel for '{ev.Name}' from '{guild.Name}'"));
 				SocketTextChannel channel = GetChannel(guild, ev);
