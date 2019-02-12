@@ -41,9 +41,18 @@ namespace Betty.commands
 
 				// apply change and report to user
 				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
 				gtb.Public = null;
 				statecollection.SetGuildEntry(gtb, database);
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.unset.public"));
+				await Context.Channel.SendMessageAsync(language.GetString("command.unset.public"));
 			}
 		}
 
@@ -60,9 +69,18 @@ namespace Betty.commands
 
 				// apply change and report to user
 				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
 				gtb.Notification = null;
 				statecollection.SetGuildEntry(gtb, database);
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.unset.notification"));
+				await Context.Channel.SendMessageAsync(language.GetString("command.unset.notification"));
 			}
 		}
 
@@ -77,7 +95,16 @@ namespace Betty.commands
 				// indicate that the bot is working on the command
 				await Context.Channel.TriggerTypingAsync();
 
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.unset.timezones.wait"));
+				var language = statecollection.GetLanguage(Context.Guild, database);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
+				await Context.Channel.SendMessageAsync(language.GetString("command.unset.timezones.wait"));
 
 				// find all the current roles in the guild
 				IEnumerable<KeyValuePair<string, ulong>> roles = Context.Guild.Roles.Select(r => new KeyValuePair<string, ulong>(r.Name, r.Id));
@@ -92,7 +119,7 @@ namespace Betty.commands
 				}
 
 				await Context.Channel.TriggerTypingAsync();
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.unset.timezones.done"));
+				await Context.Channel.SendMessageAsync(language.GetString("command.unset.timezones.done"));
 			}
 		}
 	}

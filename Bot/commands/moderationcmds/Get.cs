@@ -36,8 +36,17 @@ namespace Betty.commands
 				// indicate that the command is being worked on
 				await Context.Channel.TriggerTypingAsync();
 
-				// get all the data from the database
 				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				StringConverter language = statecollection.GetLanguage(Context.Guild, database, gtb);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Admin, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
+				// get all the data from the database
 				ApplicationTB apptb = statecollection.GetApplicationEntry(Context.Guild, database);
 				IEnumerable<EventTB> evs = agenda.GetEvents(Context.Guild, database);
 

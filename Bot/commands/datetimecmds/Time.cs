@@ -4,6 +4,7 @@ using Betty.utilities;
 using Discord.Commands;
 using Discord;
 using Betty.databases.guilds;
+using Discord.WebSocket;
 
 namespace Betty.commands
 {
@@ -21,6 +22,13 @@ namespace Betty.commands
 				await Context.Channel.TriggerTypingAsync();
 
 				StringConverter language = statecollection.GetLanguage(Context.Guild, database);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Member, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
 
 				// check if the user has specified a timezone and use it
 				TimeZoneInfo sourcetz = null;

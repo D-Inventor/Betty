@@ -28,10 +28,17 @@ namespace Betty.commands
 				// indicate that the bot is working on the command
 				await Context.Channel.TriggerTypingAsync();
 
+				var language = statecollection.GetLanguage(Context.Guild, database);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Member, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
 				// get the first event on the agenda if any
 				EventTB e = agenda.GetEvents(Context.Guild, database).FirstOrDefault();
-
-				var language = statecollection.GetLanguage(Context.Guild, database);
 
 				// make sure that there is indeed an event
 				if (e == null)

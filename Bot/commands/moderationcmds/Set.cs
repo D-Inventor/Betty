@@ -41,9 +41,18 @@ namespace Betty.commands
 
 				// apply change and report to user
 				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
 				gtb.Public = Context.Channel.Id;
 				statecollection.SetGuildEntry(gtb, database);
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.set.public"));
+				await Context.Channel.SendMessageAsync(language.GetString("command.set.public"));
 			}
 		}
 
@@ -60,6 +69,15 @@ namespace Betty.commands
 
 				// apply change and report to user
 				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
 				gtb.Notification = Context.Channel.Id;
 				statecollection.SetGuildEntry(gtb, database);
 				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.set.notification"));
@@ -77,7 +95,16 @@ namespace Betty.commands
 				// indicate that the bot is working on the command
 				await Context.Channel.TriggerTypingAsync();
 
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.set.timezones.wait"));
+				var language = statecollection.GetLanguage(Context.Guild, database);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
+				await Context.Channel.SendMessageAsync(language.GetString("command.set.timezones.wait"));
 
 				// find all the current roles in the guild
 				IEnumerable<SocketRole> present = from role in Context.Guild.Roles

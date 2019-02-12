@@ -47,6 +47,10 @@ command.set.timezones.done   = "I've added all the timezones to the list {nickna
 command.unset.timezones.wait = "{wait}"
 command.unset.timezones.done = "All the timezones are removed from the list {nickname}."
 
+command.nopermission		 = "You know that the boss doesn't allow me to do that for you {nickname}."
+							 | "I have to obey to the rules {nickname}, so I can't do that for you."
+							 | "You don't have the permissions for that {nickname}."
+
 notifications.timeleft		 = "There's only [time] left before [title] starts!"
 							 | "[title] is starting soon! Make sure you're there in [time]!"
 

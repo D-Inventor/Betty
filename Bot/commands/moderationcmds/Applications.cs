@@ -47,6 +47,13 @@ namespace Betty.commands
 
 				var language = statecollection.GetLanguage(Context.Guild, database, dbentry);
 
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Admin, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
 				// allow only 1 application per guild
 				if (statecollection.GetApplicationEntry(Context.Guild, database) != null)
 				{
@@ -110,17 +117,26 @@ namespace Betty.commands
 				// indicate that the bot is working on the command
 				await Context.Channel.TriggerTypingAsync();
 
+				StringConverter language = statecollection.GetLanguage(Context.Guild, database);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Admin, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
 				// make sure that applications are taking place
 				ApplicationTB appentry = statecollection.GetApplicationEntry(Context.Guild, database);
 				if (appentry == null)
 				{
-					await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.appstop.noapp"));
+					await Context.Channel.SendMessageAsync(language.GetString("command.appstop.noapp"));
 					return;
 				}
 
 				// stop the applications
 				await statecollection.StopApplication(Context.Guild, database, appentry);
-				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.appstop.success"));
+				await Context.Channel.SendMessageAsync(language.GetString("command.appstop.success"));
 			}
 		}
 	}

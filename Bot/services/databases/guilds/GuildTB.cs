@@ -16,5 +16,6 @@ namespace Betty.databases.guilds
 		public ulong? Notification { get; set; }
 		public ApplicationTB Application { get; set; }
 		public ICollection<EventTB> Events { get; set; }
+		public ICollection<PermissionTB> Permissions { get; set; }
 	}
 }

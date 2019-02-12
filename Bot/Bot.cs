@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Betty.databases.guilds;
 using Betty.utilities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Betty
 {
@@ -51,6 +52,12 @@ namespace Betty
 		{
 			// initiate logger process
 			logger.Init();
+
+			// migrate the database to the latest version
+			using(var database = new GuildDB())
+			{
+				database.Database.Migrate();
+			}
 
 			// read settings from the file system
 			if (!settings.Init())
@@ -154,9 +161,6 @@ namespace Betty
 			// make sure that the message is valid and from a valid source
 			if (context.Message == null || context.Message.Content == "") return;
 			if (context.User.IsBot) return;
-
-			// make sure that only users who are member can use the bot
-			if (!(context.User as SocketGuildUser).Roles.Select(r => r.Name).Contains("Member")) return;
 
 			// check if message is a command
 			int argPos = 0;

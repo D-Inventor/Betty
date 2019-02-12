@@ -7,6 +7,7 @@ using Discord.Commands;
 
 using Betty.utilities;
 using Betty.databases.guilds;
+using Discord.WebSocket;
 
 namespace Betty
 {
@@ -23,6 +24,9 @@ namespace Betty
 		{
 			using (var database = new GuildDB())
 			{
+				// first make sure that the user has the correct permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Member, database)) return;
+
 				DateTime now = DateTime.UtcNow;
 
 				// check if the text contains a time indication

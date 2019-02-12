@@ -8,6 +8,7 @@ using Discord.Commands;
 
 using Betty.utilities;
 using Betty.databases.guilds;
+using Discord.WebSocket;
 
 namespace Betty.commands
 {
@@ -33,15 +34,17 @@ namespace Betty.commands
 				// indicate that the bot is working on the command
 				await Context.Channel.TriggerTypingAsync();
 
-				try
+				var language = statecollection.GetLanguage(Context.Guild, database);
+
+				// make sure that the user has the right permissions
+				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Public, database))
 				{
-					string response = statecollection.GetLanguage(Context.Guild, database).GetString("command.ping");
-					await Context.Channel.SendMessageAsync(response);
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
 				}
-				catch (Exception e)
-				{
-					logger.Log(new LogMessage(LogSeverity.Error, "Commands", $"Attempted to ping, but failed: {e.Message}\n{e.StackTrace}"));
-				}
+
+				string response = statecollection.GetLanguage(Context.Guild, database).GetString("command.ping");
+				await Context.Channel.SendMessageAsync(response);
 			}
 		}
 	}
