@@ -44,7 +44,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
 
 				// make sure that the user has the right permissions
-				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Owner, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;
@@ -72,7 +72,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
 
 				// make sure that the user has the right permissions
-				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Owner, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;
@@ -98,7 +98,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database);
 
 				// make sure that the user has the right permissions
-				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Owner, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;

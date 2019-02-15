@@ -44,7 +44,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
 
 				// make sure that the user has the right permissions
-				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Owner, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;
@@ -72,7 +72,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
 
 				// make sure that the user has the right permissions
-				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Owner, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;
@@ -98,7 +98,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database);
 
 				// make sure that the user has the right permissions
-				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Owner, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Owner, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;
@@ -133,6 +133,71 @@ namespace Betty.commands
 				// return success to the user
 				await Context.Channel.TriggerTypingAsync();
 				await Context.Channel.SendMessageAsync(statecollection.GetLanguage(Context.Guild, database).GetString("command.set.timezones.done"));
+			}
+		}
+
+		[Command("permission"), Alias("permissions"), Summary("Sets a permission for a certain person")]
+		public async Task set_permission(SocketGuildUser user, string permissionstr, [Remainder]string rest = null)
+		{
+			using(var database = new GuildDB())
+			{
+				// log command execution
+				CommandMethods.LogExecution(logger, "set permission", Context);
+
+				// indicate that the bot is working on the command
+				await Context.Channel.TriggerTypingAsync();
+
+				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				StringConverter language = statecollection.GetLanguage(Context.Guild, database, gtb);
+
+				//convert string permission to byte
+				byte permission = PermissionHelper.StringToPermission(permissionstr);
+				byte target_permission = PermissionHelper.GetUserPermission(user, database);
+
+				// make sure that the caller has the proper permission
+				if(!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, (byte)(Math.Max(permission, target_permission) << 1), database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
+				// now actually perform the command
+				PermissionHelper.SetUserPermission(user, permission, database, gtb);
+
+				// return success
+				await Context.Channel.SendMessageAsync(language.GetString("command.set.permission"));
+			}
+		}
+
+		[Command("permission"), Alias("permissions"), Summary("Sets the permission for a specific role.")]
+		public async Task set_permission(SocketRole role, string permissionstr, [Remainder]string rest = null)
+		{
+			using(var database = new GuildDB())
+			{
+				// log command execution
+				CommandMethods.LogExecution(logger, "set permission", Context);
+
+				// indicate that the bot is working on the command
+				await Context.Channel.TriggerTypingAsync();
+
+				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				StringConverter language = statecollection.GetLanguage(Context.Guild, database, gtb);
+
+				byte permission = PermissionHelper.StringToPermission(permissionstr);
+				byte target_permission = PermissionHelper.GetRolePermission(role, database);
+
+				// make sure that the calling user has the right permission to perform this command
+				if(!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, Math.Max(permission, target_permission), database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
+				// execute the command
+				PermissionHelper.SetRolePermission(role, permission, database, gtb);
+
+				// return success
+				await Context.Channel.SendMessageAsync(language.GetString("command.set.permission"));
 			}
 		}
 	}

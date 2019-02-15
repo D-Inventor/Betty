@@ -1,0 +1,14 @@
+﻿How do permissions work?
+
+Some commands require users to have particular permissions.
+Permissions are inclusive, which means that higher permissions only add upon a lower permission
+
+How do permission changes work
+
+Permission are applied on users or on roles.
+For a user to gain a certain permission...
+	- ...this user has to gain a role that has at least this permission
+	- ...this user has to gain at least this permission from somebody with a permission that is higher than the desired permission
+
+For a user to lose a certain permission...
+	- ...the calling user has to have a higher permission than the permission of given user.

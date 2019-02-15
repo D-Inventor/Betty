@@ -16,7 +16,7 @@ namespace Betty.databases.guilds
 		[Required]
 		public ulong PermissionTarget { get; set; }
 		[Required]
-		public Permission Permission { get; set; }
+		public byte Permission { get; set; }
 		[Required]
 		public GuildTB Guild { get; set; }
 	}

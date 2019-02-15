@@ -47,6 +47,8 @@ command.set.timezones.done   = "I've added all the timezones to the list {nickna
 command.unset.timezones.wait = "{wait}"
 command.unset.timezones.done = "All the timezones are removed from the list {nickname}."
 
+command.set.permission		 = "{confirm}"
+
 command.nopermission		 = "You know that the boss doesn't allow me to do that for you {nickname}."
 							 | "I have to obey to the rules {nickname}, so I can't do that for you."
 							 | "You don't have the permissions for that {nickname}."
@@ -62,6 +64,7 @@ event.join                   = "{greet} [mention], welcome {discord}!"
 confirm					     = "I got you {nickname}."
                              | "I'll remember that {nickname}."
 						     | "Anything for you {nickname}."
+							 | "I've made a note {nickname}."
 						     
 discord                      = "to our discord"
 						     

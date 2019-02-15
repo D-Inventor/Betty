@@ -99,7 +99,7 @@ namespace Betty.Migrations
 
                     b.Property<ulong>("GuildId");
 
-                    b.Property<int>("Permission");
+                    b.Property<byte>("Permission");
 
                     b.Property<ulong>("PermissionTarget");
 

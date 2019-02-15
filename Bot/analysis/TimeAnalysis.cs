@@ -25,7 +25,7 @@ namespace Betty
 			using (var database = new GuildDB())
 			{
 				// first make sure that the user has the correct permissions
-				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Member, database)) return;
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Member, database)) return;
 
 				DateTime now = DateTime.UtcNow;
 

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Betty.Migrations
 {
     [DbContext(typeof(GuildDB))]
-    [Migration("20190212181359_Permissions")]
+    [Migration("20190213072628_Permissions")]
     partial class Permissions
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -101,7 +101,7 @@ namespace Betty.Migrations
 
                     b.Property<ulong>("GuildId");
 
-                    b.Property<int>("Permission");
+                    b.Property<byte>("Permission");
 
                     b.Property<ulong>("PermissionTarget");
 

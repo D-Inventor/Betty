@@ -14,7 +14,7 @@ namespace Betty.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     PermissionType = table.Column<int>(nullable: false),
                     PermissionTarget = table.Column<ulong>(nullable: false),
-                    Permission = table.Column<int>(nullable: false),
+                    Permission = table.Column<byte>(nullable: false),
                     GuildId = table.Column<ulong>(nullable: false)
                 },
                 constraints: table =>

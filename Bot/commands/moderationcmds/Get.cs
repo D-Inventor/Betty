@@ -40,7 +40,7 @@ namespace Betty.commands
 				StringConverter language = statecollection.GetLanguage(Context.Guild, database, gtb);
 
 				// make sure that the user has the right permissions
-				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Admin, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Admin, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;

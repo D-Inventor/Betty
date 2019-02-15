@@ -31,7 +31,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database);
 
 				// make sure that the user has the right permissions
-				if (!CommandMethods.UserHasPrivilege(Context.User as SocketGuildUser, Permission.Member, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Member, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;
