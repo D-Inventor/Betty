@@ -39,13 +39,14 @@ namespace Betty
 		public void RestoreGuildEvents(SocketGuild guild, GuildDB database)
 		{
 			// get all events and notifications for this guild
-			var evs = GetEvents(guild, database);
+            //     cast to array to prevent change to collection in foreach loop
+			var evs = GetEvents(guild, database).ToArray();
 			foreach(var ev in evs)
 			{
 				// find corresponding notifications
-				var ens = from en in database.EventNotifications
+				var ens = (from en in database.EventNotifications
 						  where en.Event == ev
-						  select en;
+						  select en).ToArray();
 
 				// make sure that given event is still valid
 				if (!CheckEventValidity(ev, ens, database)) continue;
@@ -257,9 +258,20 @@ namespace Betty
 			// check if this event has already passed
 			if (ev.Date < DateTime.UtcNow)
 			{
+                // log removal
+                logger.Log(new LogMessage(LogSeverity.Info, "Agenda", $"event '{ev.Name}' is in the past and will be removed from the agenda."));
+
 				// remove from the database
 				database.EventNotifications.RemoveRange(ens);
 				database.Events.Remove(ev);
+                try
+                {
+                    database.SaveChanges();
+                }
+                catch(Exception e)
+                {
+                    logger.Log(new LogMessage(LogSeverity.Warning, "Agenda", $"Attempted to remove invalid event from database, but failed: {e.Message}\n{e.StackTrace}"));
+                }
 				return false;
 			}
 			return true;

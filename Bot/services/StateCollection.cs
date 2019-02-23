@@ -39,7 +39,7 @@ namespace Betty
 			ApplicationTB application = GetApplicationEntry(guild, database);
 			if(application == null)
 			{
-				logger.Log(new LogMessage(LogSeverity.Info, "State", $"'{guild.Name}' currently has no application and will therefore not be restored"));
+				logger.Log(new LogMessage(LogSeverity.Info, "State", $"'{guild.Name}' currently has no application."));
 				return;
 			}
 
@@ -51,7 +51,7 @@ namespace Betty
 				if (!t.IsCancellationRequested)
 				{
 					// if it's still active, there is no need to restore the application
-					logger.Log(new LogMessage(LogSeverity.Warning, "State", $"There is already a notifier for this application. Skipping the application"));
+					logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Found an active notifier for application."));
 					return;
 				}
 				else
