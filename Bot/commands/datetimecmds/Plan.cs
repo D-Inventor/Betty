@@ -66,13 +66,19 @@ namespace Betty.commands
 					return;
 				}
 
+                // build an embed that displays the event
+                EmbedBuilder eb = new EmbedBuilder()
+                    .WithColor(Color.DarkGreen)
+                    .WithTitle($":calendar_spiral: Event");
+
+				eb.AddField("Title", title);
+				eb.AddField("Date", dateutc.ToString("dd MMMM a\\t hh:mm tt UTC"));
+
 				// put the plan in the agenda
 				agenda.Plan(Context.Guild, database, title, dateutc, notifications: constants.EventNotifications);
 
 				// return success to the user
-				await Context.Channel.SendMessageAsync(language.GetString("command.plan.success", new SentenceContext()
-																									.Add("date", $"{dateutc:dd MMMM} at {dateutc:hh:mm tt} UTC")
-																									.Add("title", title)));
+				await Context.Channel.SendMessageAsync(language.GetString("command.plan.success"), embed: eb.Build());
 			}
 		}
 	}
