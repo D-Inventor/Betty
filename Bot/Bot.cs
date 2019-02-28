@@ -54,6 +54,10 @@ namespace Betty
 			logger.Init();
 
 			// migrate the database to the latest version
+			string dbpath = Path.Combine(constants.PathToData(), "databases");
+			if (!Directory.Exists(dbpath))
+				Directory.CreateDirectory(dbpath);
+
 			using(var database = new GuildDB())
 			{
 				database.Database.Migrate();
