@@ -7,7 +7,6 @@ namespace Betty
 {
 	public class Constants
 	{
-		private static readonly string languagepath = Path.Combine("lang", "{0}.lang");
 		private static readonly string configpath = Path.Combine("config", "Config.conf");
 		private static readonly string guildspath = Path.Combine("guilds", "{0}.conf");
 
@@ -16,7 +15,8 @@ namespace Betty
 		public string PathToData()				  => Path.Combine(PathToRoot(), "data");
 		public string PathToGuild(ulong id)		  => Path.Combine(PathToRoot(), string.Format(guildspath, id));
 		public string PathToGuilds()			  => Path.Combine(PathToRoot(), "guilds");
-		public string PathToLanguage(string name) => Path.Combine(PathToRoot(), string.Format(languagepath, name));
+		public string PathToLanguages()			  => Path.Combine(PathToRoot(), "lang");
+		public string PathToLanguage(string name) => Path.Combine(PathToLanguages(), string.Format("{0}.lang", name));
 		public string PathToLogs()				  => Path.Combine(PathToRoot(), "logs");
 		public string PathToRoot()                => Directory.GetCurrentDirectory();
 

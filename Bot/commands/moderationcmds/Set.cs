@@ -200,5 +200,40 @@ namespace Betty.commands
 				await Context.Channel.SendMessageAsync(language.GetString("command.set.permission"));
 			}
 		}
+
+		[Command("language"), Alias("lang"), Summary("Sets the language of given guild to given language")]
+		public async Task set_language(string newlang)
+		{
+			using(var database = new GuildDB())
+			{
+				// log execution
+				CommandMethods.LogExecution(logger, "set language", Context);
+
+				// indicate that the command is being worked on
+				await Context.Channel.TriggerTypingAsync();
+
+				// grab the guild language
+				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
+
+				// make sure that the user has the right permissions
+				if(!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Admin, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
+				// set the language
+				if(!statecollection.SetLanguage(Context.Guild, newlang, database, gtb))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nolanguage"));
+					return;
+				}
+
+				// indicate success
+				language = statecollection.GetLanguage(Context.Guild, database, gtb);
+				await Context.Channel.SendMessageAsync(language.GetString("command.set.language"));
+			}
+		}
 	}
 }

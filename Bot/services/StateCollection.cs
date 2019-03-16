@@ -239,6 +239,41 @@ namespace Betty
 			}
 		}
 
+		public bool SetLanguage(SocketGuild guild, string language, GuildDB database, GuildTB dbentry = null)
+		{
+			// make sure that given language exists
+			if(!Directory.GetFiles(constants.PathToLanguages(), "*.lang").Select(x => Path.GetFileNameWithoutExtension(x)).Any(x => x == language))
+			{
+				logger.Log(new LogMessage(LogSeverity.Warning, "State", $"Attempted to set language for '{guild.Name}', but failed: Language does not exist"));
+				return false;
+			}
+
+			// make sure that dbentry is not null
+			if (dbentry == null) dbentry = GetGuildEntry(guild, database);
+
+			// make sure that there is a guild state
+			if (!guildCollection.ContainsKey(guild.Id)) CreateDefaultState(guild, dbentry);
+
+			// set the language
+			dbentry.Language = language;
+			database.Guilds.Update(dbentry);
+
+			try
+			{
+				// save the changes to the database
+				database.SaveChanges();
+			}
+			catch(Exception e)
+			{
+				// log failure
+				logger.Log(new LogMessage(LogSeverity.Error, "State", $"Attempted to set language in database for '{guild.Name}', but failed: {e.Message}\n{e.StackTrace}"));
+				return false;
+			}
+
+			guildCollection[guild.Id].Language = StringConverter.LoadFromFile(constants.PathToLanguage(language), logger);
+			return true;
+		}
+
 		public void SetApplicationToken(SocketGuild guild, GuildDB database, CancellationTokenSource token, GuildTB dbentry = null)
 		{
 			// make sure that dbentry is not null

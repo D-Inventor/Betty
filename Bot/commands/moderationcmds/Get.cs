@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,12 +19,14 @@ namespace Betty.commands
 		StateCollection statecollection;
 		Logger logger;
 		Agenda agenda;
+		Constants constants;
 
 		public Get(IServiceProvider services)
 		{
 			this.statecollection = services.GetService<StateCollection>();
 			this.logger = services.GetService<Logger>();
 			this.agenda = services.GetService<Agenda>();
+			this.constants = services.GetService<Constants>();
 		}
 
 		[Command("status"), Alias("state"), Summary("Returns everything that's known about a given guild")]
@@ -56,6 +59,7 @@ namespace Betty.commands
                     .WithColor(Color.Gold)
                     .WithTitle($":clipboard: Status information for '{gtb.Name}'");
 
+				eb.AddField("Language", gtb.Language);
                 eb.AddField("Public channel", (pc != null ? pc.Mention : "Undefined"));
                 eb.AddField("Notification channel", (nc != null ? nc.Mention : "Undefined"));
                 eb.AddField("Application", (apptb != null ? $"ends on: {apptb.Deadline.ToString("dd MMMM a\\t hh:mm tt UTC")}" : "No active application"));
@@ -121,6 +125,43 @@ namespace Betty.commands
         {
             await Events(EventSpecifier.All);
         }
+
+		[Command("languages"), Alias("Language"), Summary("Gets all available languages.")]
+		public async Task Languages()
+		{
+			using (var database = new GuildDB())
+			{
+				// log execution
+				CommandMethods.LogExecution(logger, "get languages", Context);
+
+				// indicate that the bot is working on the answer
+				await Context.Channel.TriggerTypingAsync();
+
+				GuildTB gtb = statecollection.GetGuildEntry(Context.Guild, database);
+				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
+
+				// make sure that caller has the right permissions
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Admin, database))
+				{
+					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					return;
+				}
+
+				EmbedBuilder eb = new EmbedBuilder()
+									.WithTitle(":speech_balloon: Languages")
+									.WithColor(Color.DarkBlue);
+
+				// get the current language
+				eb.AddField("Current Language", gtb.Language);
+
+				// find all available languages
+				IEnumerable<string> languages = Directory.GetFiles(constants.PathToLanguages(), "*.lang").Select(x => Path.GetFileNameWithoutExtension(x)).OrderBy(x => x);
+				eb.AddField("Available Languages", languages.Aggregate((x, y) => $"{x}\n{y}"));
+
+				// send feedback to caller
+				await Context.Channel.SendMessageAsync(language.GetString("present"), embed: eb.Build());
+			}
+		}
 
         public enum EventSpecifier
         {

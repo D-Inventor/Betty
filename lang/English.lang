@@ -1,0 +1,67 @@
+﻿scan.time.found              = "Here's your translation:"
+						     
+command.time.error           = "{error}"
+command.time.notimezone      = "You need to have a timezone assigned before you can use this command."
+						     
+command.plan.error           = "{error}"
+command.plan.empty           = "I need more information."
+command.plan.notimezone      = "{command.time.notimezone}"
+command.plan.past		     = "You can only plan events in the future."
+command.plan.success		 = "I saved your event in the agenda."
+
+command.cancel.empty		 = "{command.plan.empty}"
+command.cancel.notplanned	 = "I can't cancel that event, because there is no such event in the agenda."
+command.cancel.success		 = "'[title]' has been removed from the agenda."
+
+command.appstart.empty       = "{command.plan.empty}"
+command.appstart.isactive	 = "There are already active applications. You can't have multiple applications at once."
+command.appstart.error		 = "{error}"
+command.appstart.notimezone  = "{command.time.notimezone}"
+command.appstart.success	 = "I've started the applications: [url]"
+command.appstart.past		 = "{command.plan.past}"
+
+command.appstop.noapp		 = "There are currently no applications."
+command.appstop.success		 = "The application has been stopped successfully."
+
+command.event.empty			 = "There are no events on the agenda currently."
+						     
+command.mod.error            = "{error}"
+						     
+command.ping                 = "pong"
+						     
+command.set.language		 = "The language is set to English."
+
+command.set.notification     = "{confirm}"
+command.unset.notification   = "{confirm}"
+
+command.set.public           = "{confirm}"
+command.unset.public         = "{confirm}"
+						     
+command.set.timezones.wait   = "{wait}"
+command.set.timezones.done   = "All the timezones are added to this server."
+command.unset.timezones.wait = "{wait}"
+command.unset.timezones.done = "All the timezones are removed from this server."
+
+command.set.permission		 = "{confirm}"
+
+command.nopermission		 = "You do not have enough permission to perform this command."
+
+notifications.timeleft		 = "There's only [time] left before [title] starts."
+							 | "[title] is starting in [time]."
+
+notifications.deadline		 = "[title] is starting now."
+
+event.join                   = "{greet} [mention], welcome {discord}!"
+                             | "Welcome {discord} [mention]!"
+						     
+confirm					     = ":+1: done."
+						     
+discord                      = "to our discord"
+						     
+error					     = "I don't understand that command."
+						     
+greet                        = "Hi" | "Hello"
+						     
+present					     = "Here it is:"
+
+wait						 = "This will take a moment."

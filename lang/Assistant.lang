@@ -36,6 +36,8 @@ command.event.empty			 = "There are no events on the agenda currently {nickname}
 command.mod.error            = "{error}"
 						     
 command.ping                 = "{greet} {nickname}"
+
+command.set.language		 = "You're such a sweetheart :kissing_heart:"
 						     
 command.set.notification     = "{confirm}"
 command.unset.notification   = "{confirm}"
