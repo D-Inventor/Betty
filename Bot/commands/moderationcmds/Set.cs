@@ -44,7 +44,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
 
 				// make sure that the user has the right permissions
-				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Owner, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Admin, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;
@@ -72,7 +72,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database, gtb);
 
 				// make sure that the user has the right permissions
-				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Owner, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Admin, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;
@@ -98,7 +98,7 @@ namespace Betty.commands
 				var language = statecollection.GetLanguage(Context.Guild, database);
 
 				// make sure that the user has the right permissions
-				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Owner, database))
+				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Admin, database))
 				{
 					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
 					return;
@@ -116,7 +116,11 @@ namespace Betty.commands
 				{
 					if (!present.Any(x => x.Name == t))
 					{
-						await Context.Guild.CreateRoleAsync(t, isHoisted: false, permissions: constants.RolePermissions);
+						var role = await Context.Guild.CreateRoleAsync(t, isHoisted: false, permissions: constants.RolePermissions);
+						await role.ModifyAsync(x =>
+						{
+							x.Mentionable = false;
+						});
 					}
 				}
 
@@ -126,7 +130,7 @@ namespace Betty.commands
 					await sr.ModifyAsync((x) =>
 					{
 						x.Permissions = constants.RolePermissions;
-						x.Mentionable = true;
+						x.Mentionable = false;
 					});
 				}
 
