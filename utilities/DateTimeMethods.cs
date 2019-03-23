@@ -76,6 +76,8 @@ namespace Betty.utilities
 
 		public static IEnumerable<KeyValuePair<string, DateTime>> LocalTimeToTimetable(DateTime localtime, TimeZoneInfo source, SocketGuild guild)
 		{
+			yield return new KeyValuePair<string, DateTime>("UTC", TimeZoneInfo.ConvertTimeToUtc(localtime, source));
+
 			foreach(string s in GuildToTimezones(guild).OrderBy(x => x))
 			{
 				yield return new KeyValuePair<string, DateTime>(s, TimeZoneInfo.ConvertTime(localtime, source, IDToTimezone(s)));

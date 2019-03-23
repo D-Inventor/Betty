@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using Betty.utilities;
 using Discord.Commands;
 using Discord;
@@ -10,6 +11,8 @@ namespace Betty.commands
 {
 	public partial class DateConvert
 	{
+		private static Regex timerx = new Regex(@"(?<time>\d{1,2}(:\d{2})?\s?(am|pm))(\s(?<locale>(utc|local)))?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
 		[Command("time"), Summary("This command takes a time and displays a table which converts that time to all the timezones")]
 		public async Task ConvertTime([Remainder]string input = null)
 		{
@@ -30,33 +33,53 @@ namespace Betty.commands
 					return;
 				}
 
-				// check if the user has specified a timezone and use it
-				TimeZoneInfo sourcetz = null;
-				foreach (var tz in Context.Message.MentionedRoles)
+				TimeZoneInfo sourcetz;
+				DateTime time;
+
+				if(input != null)
 				{
-					if (DateTimeMethods.IsTimezone(tz.Name))
+					// parse the input
+					Match m = timerx.Match(input);
+					if (!m.Success)
 					{
-						sourcetz = DateTimeMethods.IDToTimezone(tz.Name);
-						break;
+						await Context.Channel.SendMessageAsync(language.GetString("command.time.error"));
+						return;
 					}
-				}
 
-				// if no timezone was specified, use the user's own timezone
-				if (sourcetz == null) sourcetz = DateTimeMethods.UserToTimezone(Context.User);
+					// find out which timezone is desired
+					GroupCollection g = m.Groups;
+					TimeLocale tl;
+					if (g["locale"].Success)
+					{
+						if(!Enum.TryParse<TimeLocale>(g["locale"].Value, true, out tl))
+						{
+							await Context.Channel.SendMessageAsync(language.GetString("command.time.error"));
+							return;
+						}
+					}
+					else
+					{
+						tl = TimeLocale.local;
+					}
 
-				// make sure that the user does indeed have a timezone
-				if (sourcetz == null)
-				{
-					await Context.Channel.SendMessageAsync(language.GetString("command.time.notimezone"));
-					return;
-				}
+					// find the desired timezone info
+					if(tl == TimeLocale.local)
+					{
+						sourcetz = DateTimeMethods.UserToTimezone(Context.User);
+						if(sourcetz == null)
+						{
+							await Context.Channel.SendMessageAsync(language.GetString("command.time.notimezone"));
+							return;
+						}
+					}
+					else
+					{
+						sourcetz = TimeZoneInfo.Utc;
+					}
 
-				// get the desired time
-				DateTime time = TimeZoneInfo.ConvertTime(DateTime.Now, sourcetz);
-				if (input != null)
-				{
-					// check if the provided time is in the correct format
-					TimeSpan? ts = DateTimeMethods.StringToTime(input, true);
+					// find the time
+					time = TimeZoneInfo.ConvertTime(DateTime.Now, sourcetz);
+					TimeSpan? ts = DateTimeMethods.StringToTime(g["time"].Value, true);
 					if (!ts.HasValue)
 					{
 						// signal error if not
@@ -64,6 +87,11 @@ namespace Betty.commands
 						return;
 					}
 					time = new DateTime(time.Year, time.Month, time.Day, 0, 0, 0, time.Kind) + ts.Value;
+				}
+				else
+				{
+					sourcetz = TimeZoneInfo.Utc;
+					time = DateTime.UtcNow;
 				}
 
 				// construct a timetable and present it to the user
@@ -74,5 +102,10 @@ namespace Betty.commands
 				await Context.Channel.SendMessageAsync(result);
 			}
 		}
+	}
+
+	public enum TimeLocale
+	{
+		utc, local
 	}
 }
