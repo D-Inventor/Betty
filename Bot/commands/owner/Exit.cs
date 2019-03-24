@@ -28,5 +28,15 @@ namespace Betty.commands
 
             bot.Stop();
         }
+
+        [RequireOwner]
+        [Command("restart"), Summary("Automatically restarts Betty")]
+        public async Task Restart()
+        {
+            // log command execution
+            CommandMethods.LogExecution(logger, "restart", Context);
+
+            bot.Stop(true);
+        }
     }
 }

@@ -16,12 +16,16 @@ namespace Betty
 
 		private async Task MainAsync()
 		{
-			// create and run the bot
-			using (Bot bot = new Bot())
-			{
-				if (await bot.Init())
-					await bot.Start();
-			}
+            // create and run the bot
+            bool restart = true;
+            while (restart)
+            {
+			    using (Bot bot = new Bot())
+			    {
+				    if (await bot.Init())
+					    restart = await bot.Start();
+			    }
+            }
 		}
 	}
 }

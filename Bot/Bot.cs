@@ -35,6 +35,8 @@ namespace Betty
 		Notifier notifier;
         ManualResetEventSlim exitevent;
 
+        bool shouldrestart;
+
 		public Bot()
 		{
 			// set up services and store reference to services that are relevant for this class
@@ -45,6 +47,8 @@ namespace Betty
 			logger = services.GetService<Logger>();
 			statecollection = services.GetService<StateCollection>();
 			notifier = services.GetService<Notifier>();
+
+            shouldrestart = false;
             exitevent = new ManualResetEventSlim(false);
 			analysis = new Analysis(services);
 		}
@@ -92,7 +96,7 @@ namespace Betty
 			return true;
 		}
 
-		public async Task Start()
+		public async Task<bool> Start()
 		{
 			// try to login
 			try
@@ -102,7 +106,7 @@ namespace Betty
 			catch (Exception e)
 			{
 				logger.Log(new LogMessage(LogSeverity.Error, "Bot", $"Attempted to log in, but failed: {e.Message}", e));
-				return;
+				return false;
 			}
 
 			// start
@@ -114,12 +118,13 @@ namespace Betty
             await client.StopAsync();
             await client.LogoutAsync();
 
-			//await Task.Delay(-1);
+            return shouldrestart;
 		}
 
         public void Stop(bool restart = false)
         {
             exitevent.Set();
+            shouldrestart = restart;
         }
 
 		public void Dispose()
