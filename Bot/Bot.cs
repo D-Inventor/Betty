@@ -79,14 +79,14 @@ namespace Betty
 			// create discord objects
 			client = new DiscordSocketClient(new DiscordSocketConfig
 			{
-				LogLevel = settings.LogLevel
+				LogLevel = settings.LogLevel,
 			});
 
 			commands = new CommandService(new CommandServiceConfig
 			{
 				CaseSensitiveCommands = false,
 				DefaultRunMode = RunMode.Async,
-				LogLevel = settings.LogLevel
+				LogLevel = settings.LogLevel,
 			});
 			await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
 

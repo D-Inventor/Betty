@@ -44,6 +44,10 @@ command.unset.timezones.done = "All the timezones are removed from this server."
 
 command.set.permission		 = "{confirm}"
 
+command.exit				 = "Shutting down now..."
+
+command.restart				 = "Restarting now..."
+
 command.nopermission		 = "You do not have enough permission to perform this command."
 
 notifications.timeleft		 = "There's only [time] left before [title] starts."

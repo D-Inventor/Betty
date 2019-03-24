@@ -52,6 +52,12 @@ command.unset.timezones.done = "All the timezones are removed from the list {nic
 
 command.set.permission		 = "{confirm}"
 
+command.exit				 = "Excuse me!? Don't expect me to come back any time soon! :rage:"
+							 | "I am very offended! This is unacceptable, I'm out of here!"
+
+command.restart				 = "Alright Sweety, I'll grab a cup of coffee and I'll be right back for you :kissing_heart:"
+							 | "I'll be back in a second, {nickname}!"
+
 command.nopermission		 = "You know that the boss doesn't allow me to do that for you {nickname}."
 							 | "I have to obey to the rules {nickname}, so I can't do that for you."
 							 | "You don't have the permissions for that {nickname}."

@@ -1,4 +1,5 @@
-﻿using Betty.utilities;
+﻿using Betty.databases.guilds;
+using Betty.utilities;
 using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -13,30 +14,47 @@ namespace Betty.commands
     {
         Bot bot;
         Logger logger;
+        StateCollection statecollection;
+
         public Exit(IServiceProvider services)
         {
             bot = services.GetService<Bot>();
             logger = services.GetService<Logger>();
+            statecollection = services.GetService<StateCollection>();
         }
 
         [RequireOwner]
         [Command("kill"), Alias("exit", "quit"), Summary("Shuts Betty down")]
         public async Task Kill()
         {
-            // log command execution
-            CommandMethods.LogExecution(logger, "kill", Context);
+            using(var database = new GuildDB())
+            {
+                // log command execution
+                CommandMethods.LogExecution(logger, "kill", Context);
 
-            bot.Stop();
+                StringConverter language = statecollection.GetLanguage(Context.Guild, database);
+
+                await Context.Channel.SendMessageAsync(language.GetString("command.exit"));
+
+                bot.Stop();
+            }
         }
 
         [RequireOwner]
         [Command("restart"), Summary("Automatically restarts Betty")]
         public async Task Restart()
         {
-            // log command execution
-            CommandMethods.LogExecution(logger, "restart", Context);
+            using (var database = new GuildDB())
+            {
+                // log command execution
+                CommandMethods.LogExecution(logger, "restart", Context);
 
-            bot.Stop(true);
+                StringConverter language = statecollection.GetLanguage(Context.Guild, database);
+
+                await Context.Channel.SendMessageAsync(language.GetString("command.restart"));
+
+                bot.Stop(true);
+            }
         }
     }
 }
