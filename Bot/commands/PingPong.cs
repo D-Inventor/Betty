@@ -34,16 +34,24 @@ namespace Betty.commands
 				// indicate that the bot is working on the command
 				await Context.Channel.TriggerTypingAsync();
 
-				var language = statecollection.GetLanguage(Context.Guild, database);
+                string response;
+                if(Context.Guild != null)
+                {
+				    var language = statecollection.GetLanguage(Context.Guild, database);
 
-				// make sure that the user has the right permissions
-				if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Public, database))
-				{
-					await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
-					return;
-				}
+				    // make sure that the user has the right permissions
+				    if (!PermissionHelper.UserHasPermission(Context.User as SocketGuildUser, PermissionHelper.Public, database))
+				    {
+					    await Context.Channel.SendMessageAsync(language.GetString("command.nopermission"));
+					    return;
+				    }
 
-				string response = statecollection.GetLanguage(Context.Guild, database).GetString("command.ping");
+				    response = statecollection.GetLanguage(Context.Guild, database).GetString("command.ping");
+                }
+                else
+                {
+                    response = "pong";
+                }
 				await Context.Channel.SendMessageAsync(response);
 			}
 		}
