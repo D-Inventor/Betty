@@ -33,6 +33,7 @@ namespace Betty
 		Logger logger;
 		StateCollection statecollection;
 		Notifier notifier;
+        ManualResetEventSlim exitevent;
 
 		public Bot()
 		{
@@ -44,6 +45,8 @@ namespace Betty
 			logger = services.GetService<Logger>();
 			statecollection = services.GetService<StateCollection>();
 			notifier = services.GetService<Notifier>();
+            exitevent = services.GetService<ManualResetEventSlim>();
+            exitevent.Reset();
 			analysis = new Analysis(services);
 		}
 
@@ -106,8 +109,13 @@ namespace Betty
 			// start
 			await client.StartAsync();
 
-			// keep the bot running forever
-			await Task.Delay(-1);
+            // keep the bot running until an exit signal is given
+            exitevent.Wait();
+
+            await client.StopAsync();
+            await client.LogoutAsync();
+
+			//await Task.Delay(-1);
 		}
 
 		public void Dispose()
@@ -134,6 +142,7 @@ namespace Betty
 			.AddSingleton(x => new NotifierFactory(x))
 			.AddSingleton(x => new Settings(x))
 			.AddSingleton(x => new Agenda(x))
+            .AddSingleton<ManualResetEventSlim>()
 			.BuildServiceProvider();
 		#endregion
 
