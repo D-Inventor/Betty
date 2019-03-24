@@ -15,7 +15,7 @@ using Betty.databases.guilds;
 namespace Betty.commands
 {
 	[Group("unset"), Summary("unsets a given settings")]
-	public class Unset : ModuleBase<SocketCommandContext>
+	public partial class Unset : ModuleBase<SocketCommandContext>
 	{
 		StateCollection statecollection;
 		Constants constants;

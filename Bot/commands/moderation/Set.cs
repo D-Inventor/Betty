@@ -15,7 +15,7 @@ using Betty.databases.guilds;
 namespace Betty.commands
 {
 	[Group("set"), Summary("Sets a given setting to a given value")]
-	public class Set : ModuleBase<SocketCommandContext>
+	public partial class Set : ModuleBase<SocketCommandContext>
 	{
 		StateCollection statecollection;
 		Constants constants;

@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Betty.commands
 {
 	[Group("get"), Summary("Gets a setting for a specific guild")]
-	public class Get : ModuleBase<SocketCommandContext>
+	public partial class Get : ModuleBase<SocketCommandContext>
 	{
 		StateCollection statecollection;
 		Logger logger;
@@ -35,7 +35,7 @@ namespace Betty.commands
 			using(var database = new GuildDB())
 			{
 				// log execution
-				CommandMethods.LogExecution(logger, "status", Context);
+				CommandMethods.LogExecution(logger, "get status", Context);
 
 				// indicate that the command is being worked on
 				await Context.Channel.TriggerTypingAsync();
@@ -74,7 +74,7 @@ namespace Betty.commands
             using(var database = new GuildDB())
             {
                 // log execution
-                CommandMethods.LogExecution(logger, "event", Context);
+                CommandMethods.LogExecution(logger, "get event", Context);
 
                 // indicate that the command is being worked on
                 await Context.Channel.TriggerTypingAsync();
