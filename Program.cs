@@ -1,5 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using Betty.WebAPI;
+using System.Threading.Tasks;
 using System.Globalization;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Betty
 {
@@ -7,14 +9,18 @@ namespace Betty
     {
         static void Main(string[] args)
         {
-			// test if the database functions properly
-
 			// entry point of the application
 			CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-			new Program().MainAsync().GetAwaiter().GetResult();
+
+            // start both the bot and the web api
+            var bottask = RunBotAsync();
+            var webapitask = RunWebAPIAsync();
+
+            // keep running until one of these tasks ends
+            Task.WaitAny(bottask, webapitask);
         }
 
-		private async Task MainAsync()
+		private static async Task RunBotAsync()
 		{
             // create and run the bot
             bool restart = true;
@@ -27,5 +33,17 @@ namespace Betty
 			    }
             }
 		}
+
+        private static async Task RunWebAPIAsync()
+        {
+            var host = new WebHostBuilder()
+                .UseKestrel()
+                .UseIISIntegration()
+                .UseStartup<Startup>()
+                .UseUrls("http://*:4032", "https://*:4033")
+                .Build();
+
+            await host.RunAsync();
+        }
 	}
 }
