@@ -176,7 +176,7 @@ namespace Betty
 
 		private async Task Client_MessageReceived(SocketMessage arg)
 		{
-			// get context variables
+            // get context variables
 			var message = arg as SocketUserMessage;
 			var context = new SocketCommandContext(client, message);
 
@@ -188,7 +188,7 @@ namespace Betty
 			int argPos = 0;
 			if (message.HasStringPrefix("$", ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))
 			{
-				// execute command
+                // execute command
 				var result = await commands.ExecuteAsync(context, argPos, services);
 				if (!result.IsSuccess)
 				{

@@ -17,7 +17,7 @@ namespace Betty.utilities
 	{
 		public static void LogExecution(Logger logger, string command, SocketCommandContext Context)
 		{
-			logger.Log(new LogMessage(LogSeverity.Info, "Commands", $"Received '{command}' command from {Context.User.Username} in {Context.Guild.Name}:{Context.Channel.Name}"));
+			logger.Log(new LogMessage(LogSeverity.Info, "Commands", $"Received '{command}' command from {Context.User.Username} in {(Context.Guild != null ? Context.Guild.Name : "private message")}:{Context.Channel.Name}"));
 		}
 	}
 }

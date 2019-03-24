@@ -32,9 +32,15 @@ namespace Betty.commands
                 // log command execution
                 CommandMethods.LogExecution(logger, "kill", Context);
 
-                StringConverter language = statecollection.GetLanguage(Context.Guild, database);
-
-                await Context.Channel.SendMessageAsync(language.GetString("command.exit"));
+                if(Context.Guild != null)
+                {
+                    StringConverter language = statecollection.GetLanguage(Context.Guild, database);
+                    await Context.Channel.SendMessageAsync(language.GetString("command.exit"));
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync("Shutting down now...");
+                }
 
                 bot.Stop();
             }
@@ -49,9 +55,15 @@ namespace Betty.commands
                 // log command execution
                 CommandMethods.LogExecution(logger, "restart", Context);
 
-                StringConverter language = statecollection.GetLanguage(Context.Guild, database);
-
-                await Context.Channel.SendMessageAsync(language.GetString("command.restart"));
+                if (Context.Guild != null)
+                {
+                    StringConverter language = statecollection.GetLanguage(Context.Guild, database);
+                    await Context.Channel.SendMessageAsync(language.GetString("command.restart"));
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync("Restarting now...");
+                }
 
                 bot.Stop(true);
             }
