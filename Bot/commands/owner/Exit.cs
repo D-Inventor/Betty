@@ -11,11 +11,11 @@ namespace Betty.commands
 {
     public class Exit : ModuleBase<SocketCommandContext>
     {
-        ManualResetEventSlim exitevent;
+        Bot bot;
         Logger logger;
         public Exit(IServiceProvider services)
         {
-            exitevent = services.GetService<ManualResetEventSlim>();
+            bot = services.GetService<Bot>();
             logger = services.GetService<Logger>();
         }
 
@@ -26,10 +26,7 @@ namespace Betty.commands
             // log command execution
             CommandMethods.LogExecution(logger, "kill", Context);
 
-            // indicate that the bot is working on the command
-            await Context.Channel.TriggerTypingAsync();
-
-            exitevent.Set();
+            bot.Stop();
         }
     }
 }
