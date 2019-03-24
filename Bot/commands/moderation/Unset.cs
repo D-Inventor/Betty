@@ -28,7 +28,8 @@ namespace Betty.commands
 			this.logger = services.GetService<Logger>();
 		}
 
-		[Command("public"), Summary("Sets the public channel to null")]
+        [RequireContext(ContextType.Guild)]
+        [Command("public"), Summary("Sets the public channel to null")]
 		public async Task unset_public([Remainder]string input = null)
 		{
 			using (var database = new GuildDB())
@@ -56,7 +57,8 @@ namespace Betty.commands
 			}
 		}
 
-		[Command("notification"), Alias("notifications"), Summary("Sets the notification channel to null")]
+        [RequireContext(ContextType.Guild)]
+        [Command("notification"), Alias("notifications"), Summary("Sets the notification channel to null")]
 		public async Task unset_notification([Remainder]string input = null)
 		{
 			using (var database = new GuildDB())
@@ -84,7 +86,8 @@ namespace Betty.commands
 			}
 		}
 
-		[Command("timezones"), Alias("timezone"), Summary("Removes all the roles for performing time queries")]
+        [RequireContext(ContextType.Guild)]
+        [Command("timezones"), Alias("timezone"), Summary("Removes all the roles for performing time queries")]
 		public async Task unset_timezones([Remainder]string input = null)
 		{
 			using (var database = new GuildDB())

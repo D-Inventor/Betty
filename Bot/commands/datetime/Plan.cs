@@ -13,9 +13,9 @@ using Discord.WebSocket;
 namespace Betty.commands
 {
 	public partial class DateConvert
-	{
-		
-		[Command("plan"), Summary("This command takes a time and displays a table which converts that time to all the timezones")]
+    {
+        [RequireContext(ContextType.Guild)]
+        [Command("plan"), Summary("This command takes a time and displays a table which converts that time to all the timezones")]
 		public async Task Plan([Remainder]string input = null)
 		{
 			using(var database = new GuildDB())

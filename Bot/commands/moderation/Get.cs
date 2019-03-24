@@ -29,7 +29,8 @@ namespace Betty.commands
 			this.constants = services.GetService<Constants>();
 		}
 
-		[Command("status"), Alias("state"), Summary("Returns everything that's known about a given guild")]
+        [RequireContext(ContextType.Guild)]
+        [Command("status"), Alias("state"), Summary("Returns everything that's known about a given guild")]
 		public async Task Status([Remainder]string input = null)
 		{
 			using(var database = new GuildDB())
@@ -68,6 +69,7 @@ namespace Betty.commands
 			}
 		}
 
+        [RequireContext(ContextType.Guild)]
         [Command("event"), Alias("events"), Summary("Command for displaying events from the database")]
         public async Task Events(EventSpecifier eventSpecifier, [Remainder]string rest = null)
         {
@@ -120,13 +122,15 @@ namespace Betty.commands
             }
         }
 
+        [RequireContext(ContextType.Guild)]
         [Command("event"), Alias("events"), Summary("Command for displaying events from the database")]
         public async Task Events()
         {
             await Events(EventSpecifier.All);
         }
 
-		[Command("languages"), Alias("Language"), Summary("Gets all available languages.")]
+        [RequireContext(ContextType.Guild)]
+        [Command("languages"), Alias("Language"), Summary("Gets all available languages.")]
 		public async Task Languages()
 		{
 			using (var database = new GuildDB())

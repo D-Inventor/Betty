@@ -28,7 +28,8 @@ namespace Betty.commands
 			this.logger = services.GetService<Logger>();
 		}
 
-		[Command("public"), Summary("Sets the channel of execution as the public channel")]
+        [RequireContext(ContextType.Guild)]
+        [Command("public"), Summary("Sets the channel of execution as the public channel")]
 		public async Task set_public([Remainder]string input = null)
 		{
 			using(var database = new GuildDB())
@@ -56,7 +57,8 @@ namespace Betty.commands
 			}
 		}
 
-		[Command("notification"), Alias("notifications"), Summary("Sets the channel of execution as the notification channel")]
+        [RequireContext(ContextType.Guild)]
+        [Command("notification"), Alias("notifications"), Summary("Sets the channel of execution as the notification channel")]
 		public async Task set_notification([Remainder]string input = null)
 		{
 			using(var database = new GuildDB())
@@ -84,7 +86,8 @@ namespace Betty.commands
 			}
 		}
 
-		[Command("timezones"), Alias("timezone"), Summary("Goes through all the timezones and creates/updates them accordingly")]
+        [RequireContext(ContextType.Guild)]
+        [Command("timezones"), Alias("timezone"), Summary("Goes through all the timezones and creates/updates them accordingly")]
 		public async Task set_timezones([Remainder]string input = null)
 		{
 			using(var database = new GuildDB())
@@ -140,7 +143,8 @@ namespace Betty.commands
 			}
 		}
 
-		[Command("permission"), Alias("permissions"), Summary("Sets a permission for a certain person")]
+        [RequireContext(ContextType.Guild)]
+        [Command("permission"), Alias("permissions"), Summary("Sets a permission for a certain person")]
 		public async Task set_permission(SocketGuildUser user, string permissionstr, [Remainder]string rest = null)
 		{
 			using(var database = new GuildDB())
@@ -173,7 +177,8 @@ namespace Betty.commands
 			}
 		}
 
-		[Command("permission"), Alias("permissions"), Summary("Sets the permission for a specific role.")]
+        [RequireContext(ContextType.Guild)]
+        [Command("permission"), Alias("permissions"), Summary("Sets the permission for a specific role.")]
 		public async Task set_permission(SocketRole role, string permissionstr, [Remainder]string rest = null)
 		{
 			using(var database = new GuildDB())
@@ -205,7 +210,8 @@ namespace Betty.commands
 			}
 		}
 
-		[Command("language"), Alias("lang"), Summary("Sets the language of given guild to given language")]
+        [RequireContext(ContextType.Guild)]
+        [Command("language"), Alias("lang"), Summary("Sets the language of given guild to given language")]
 		public async Task set_language(string newlang)
 		{
 			using(var database = new GuildDB())

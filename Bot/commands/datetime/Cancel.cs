@@ -16,6 +16,7 @@ namespace Betty.commands
 {
 	public partial class DateConvert
 	{
+        [RequireContext(ContextType.Guild)]
 		[Command("cancel"), Summary("Removes an appointment from the agenda")]
 		public async Task Cancel([Remainder]string input = null)
 		{

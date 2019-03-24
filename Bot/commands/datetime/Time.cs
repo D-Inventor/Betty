@@ -13,7 +13,8 @@ namespace Betty.commands
 	{
 		private static Regex timerx = new Regex(@"(?<time>\d{1,2}(:\d{2})?\s?(am|pm))(\s(?<locale>(utc|local)))?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-		[Command("time"), Summary("This command takes a time and displays a table which converts that time to all the timezones")]
+        [RequireContext(ContextType.Guild)]
+        [Command("time"), Summary("This command takes a time and displays a table which converts that time to all the timezones")]
 		public async Task ConvertTime([Remainder]string input = null)
 		{
 			using(var database = new GuildDB())

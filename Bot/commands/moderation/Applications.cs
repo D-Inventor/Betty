@@ -32,7 +32,8 @@ namespace Betty.commands
 			constants = services.GetService<Constants>();
 		}
 
-		[Command("start"), Alias("begin"), Summary("Starts an application session by creating an invite url and an applications channel")]
+        [RequireContext(ContextType.Guild)]
+        [Command("start"), Alias("begin"), Summary("Starts an application session by creating an invite url and an applications channel")]
 		public async Task StartApplications([Remainder]string input = null)
 		{
 			using(var database = new GuildDB())
@@ -106,7 +107,8 @@ namespace Betty.commands
 			}
 		}
 
-		[Command("stop"), Alias("end"), Summary("Stops an application session by destroying the invite url and the applications channel")]
+        [RequireContext(ContextType.Guild)]
+        [Command("stop"), Alias("end"), Summary("Stops an application session by destroying the invite url and the applications channel")]
 		public async Task StopApplication([Remainder]string input = null)
 		{
 			using(var database = new GuildDB())
