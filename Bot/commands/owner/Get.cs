@@ -31,7 +31,6 @@ namespace Betty.commands
 
                 // display all guilds in an embed
                 EmbedBuilder eb = new EmbedBuilder()
-                    .WithTitle("Active Guilds")
                     .WithColor(Color.Gold);
 
                 eb.AddField("Guilds", dbresult.Aggregate((x, y) => $"{x}\n{y}"));
