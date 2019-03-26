@@ -1,4 +1,5 @@
 ﻿using Betty.WebAPI;
+using System;
 using System.Threading.Tasks;
 using System.Globalization;
 using Microsoft.AspNetCore.Hosting;
@@ -36,14 +37,21 @@ namespace Betty
 
         private static async Task RunWebAPIAsync()
         {
-            var host = new WebHostBuilder()
-                .UseKestrel()
-                .UseIISIntegration()
-                .UseStartup<Startup>()
-                .UseUrls("http://*:4032", "https://*:4033")
-                .Build();
+            try
+            {
+                var host = new WebHostBuilder()
+                    .UseKestrel()
+                    .UseIISIntegration()
+                    .UseStartup<Startup>()
+                    .UseUrls("http://*:4032")
+                    .Build();
 
-            await host.RunAsync();
+                await host.RunAsync();
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine($"Attempted to run web api, but failed: {e}");
+            }
         }
 	}
 }

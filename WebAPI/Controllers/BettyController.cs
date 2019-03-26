@@ -26,14 +26,15 @@ namespace Betty.WebAPI
         }
 
         // GET: api/Betty/{guildid}/events
-        [HttpGet("{id}/events", Name = "Get")]
-        public IEnumerable<EventAndNotifications> Get(ulong id)
+        [HttpGet("{id}/events")]
+        public IEnumerable<EventAndNotifications> GuildEvents(ulong id)
         {
             using (var database = new GuildDB())
             {
                 var dbresult = (from g in database.Guilds
                                 where g.GuildId == id
                                 select g.Events).FirstOrDefault();
+                
 
                 if (dbresult == null) return null;
 
@@ -67,9 +68,22 @@ namespace Betty.WebAPI
 
                 var notifications = (from n in database.EventNotifications
                                      where n.Event == ev
-                                     select new Notification { Date = n.Date, Response = n.ResponseKeyword}).ToArray();
+                                     select new Notification { Date = n.Date, Response = n.ResponseKeyword }).ToArray();
 
-                return new EventAndNotifications { Event = new Event { Id = ev.EventId, Date = ev.Date, Name = ev.Name }, Notifications = notifications};
+                return new EventAndNotifications { Event = new Event { Id = ev.EventId, Date = ev.Date, Name = ev.Name }, Notifications = notifications };
+            }
+        }
+
+        [HttpGet("{gid}/permissions")]
+        public IEnumerable<Permission> Permissions(ulong gid)
+        {
+            using(var database = new GuildDB())
+            {
+                var permissions = from p in database.Permissions
+                                  where p.Guild.GuildId == gid
+                                  select new Permission { Level = p.Permission, Target = p.PermissionTarget, Type = p.PermissionType };
+
+                return permissions.ToArray();
             }
         }
 
@@ -96,6 +110,13 @@ namespace Betty.WebAPI
         {
             public string Response { get; set; }
             public DateTime Date { get; set; }
+        }
+
+        public class Permission
+        {
+            public PermissionType Type { get; set; }
+            public ulong Target { get; set; }
+            public byte Level { get; set; }
         }
     }
 }

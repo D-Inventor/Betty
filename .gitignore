@@ -4,3 +4,5 @@ tools/
 bin/
 .vs/
 obj/
+/data/databases/guild.db
+*.log
