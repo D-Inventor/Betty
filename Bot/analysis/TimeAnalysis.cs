@@ -30,7 +30,7 @@ namespace Betty
 				DateTime now = DateTime.UtcNow;
 
 				// check if the text contains a time indication
-				TimeSpan? FoundTime = DateTimeMethods.StringToTime(Context.Message.Content, false);
+				TimeSpan? FoundTime = DateTimeMethods.StringToTime(Context.Message.Content);
 				if (!FoundTime.HasValue) return;
 
 				// check if the user has a timezone applied

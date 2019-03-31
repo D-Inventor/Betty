@@ -9,7 +9,7 @@ namespace Betty
 	{
 		public static T Max<T>(this IEnumerable<T> inputs, Func<T, IComparable> comparer)
 		{
-			if (inputs.Count() == 0) return default(T);
+			if (inputs.Count() == 0) throw new ArgumentException("Can't get the maximum of an empty sequence");
 
 			T result = inputs.First();
 			IComparable resultvalue = comparer(result);
@@ -29,7 +29,7 @@ namespace Betty
 
 		public static T Min<T>(this IEnumerable<T> inputs, Func<T, IComparable> comparer)
 		{
-			if (inputs.Count() == 0) return default(T);
+			if (inputs.Count() == 0) throw new ArgumentException("Can't get the minimum of an empty sequence");
 
 			T result = inputs.First();
 			IComparable resultvalue = comparer(result);

@@ -69,8 +69,9 @@ namespace Betty
 					Directory.CreateDirectory(logpath);
 				}
 
-				// find the most recent log file in this directory
-				string path = Directory.GetFiles(constants.PathToLogs()).Max(x => File.GetCreationTimeUtc(x));
+                // find the most recent log file in this directory
+                string[] logfiles = Directory.GetFiles(constants.PathToLogs());
+                string path = logfiles.Length > 0 ? logfiles.Max(x => File.GetCreationTimeUtc(x)) : null;
 
 				// open log file at given path if present and smaller than 20MB or create a new log file
 				using (StreamWriter sw = new StreamWriter((path == null || new FileInfo(path).Length > constants.MaxLogSize) ? Path.Combine(logpath, $"{DateTime.UtcNow:yyyyMMdd_HHmmss}.log") : path, true))
