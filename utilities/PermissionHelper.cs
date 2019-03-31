@@ -163,7 +163,7 @@ namespace Betty.utilities
 				case "owner":
 					return Owner;
 				default:
-					throw new Exception($"Cannot parse '{permissionstr}' as a permission");
+					throw new ArgumentException($"Cannot parse '{permissionstr}' as a permission");
 			}
 		}
 	}

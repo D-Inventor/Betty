@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Betty
 {
-	public static class LinqExtensions
+    public static class LinqExtensions
 	{
 		public static T Max<T>(this IEnumerable<T> inputs, Func<T, IComparable> comparer)
 		{
