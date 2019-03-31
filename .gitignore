@@ -6,3 +6,4 @@ bin/
 obj/
 /data/databases/guild.db
 *.log
+/Betty/data/databases
