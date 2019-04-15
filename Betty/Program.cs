@@ -1,57 +1,69 @@
-﻿using Betty.WebAPI;
+﻿using Betty.Database;
+using Betty.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using SimpleSettings;
 using System;
-using System.Threading.Tasks;
-using System.Globalization;
-using Microsoft.AspNetCore.Hosting;
+using System.IO;
 
 namespace Betty
 {
-	class Program
+    class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-			// entry point of the application
-			CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-
-            // start both the bot and the web api
-            var bottask = RunBotAsync();
-            var webapitask = RunWebAPIAsync();
-
-            // keep running until one of these tasks ends
-            Task.WaitAny(bottask, webapitask);
+            if (!CheckFileIntegrity())
+                return;
+            IServiceProvider services = LoadServices();
         }
 
-		private static async Task RunBotAsync()
-		{
-            // create and run the bot
-            bool restart = true;
-            while (restart)
-            {
-			    using (Bot bot = new Bot())
-			    {
-				    if (await bot.Init())
-					    restart = await bot.Start();
-			    }
-            }
-		}
-
-        private static async Task RunWebAPIAsync()
+        private static bool CheckFileIntegrity()
         {
-            try
+            // make sure that settings file exists
+            string data = Path.Combine(Directory.GetCurrentDirectory(), "data");
+            string file = Path.Combine(data, "Configurations.conf");
+            if (!Directory.Exists(data) || !File.Exists(file))
             {
-                var host = new WebHostBuilder()
-                    .UseKestrel()
-                    .UseIISIntegration()
-                    .UseStartup<Startup>()
-                    .UseUrls("http://*:4032")
-                    .Build();
+                // create required directory and file
+                Directory.CreateDirectory(data);
+                Settings.ToFile<Configurations>(null, file);
 
-                await host.RunAsync();
+                // notify user that file needs to be filled in with desired settings
+                Console.WriteLine("Configuration file was not found. Created a new template. Please fill in and restart the bot.");
+
+                // return failure
+                return false;
             }
-            catch(Exception e)
+
+            // migrate the database to the latest version
+            using(var database = new BettyDB())
             {
-                Console.WriteLine($"Attempted to run web api, but failed: {e}");
+                database.Database.Migrate();
             }
+
+            // return success
+            return true;
         }
-	}
+
+        static IServiceProvider LoadServices()
+        {
+            // create all services
+            string file = Path.Combine(Directory.GetCurrentDirectory(), "data", "Configurations.conf");
+            Configurations configurations = Settings.FromFile<Configurations>(file);
+            Logger logger = new Logger
+            {
+                LogSeverity = configurations.LogSeverity,
+                StreamProvider = configurations.LogfileProvider
+            };
+
+            var serviceCollection = new ServiceCollection();
+            serviceCollection
+                .AddSingleton(configurations)
+                .AddSingleton(logger);
+            
+
+            // return as service provider
+            return serviceCollection.BuildServiceProvider();
+        }
+    }
 }

@@ -1,0 +1,26 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace Betty.Database
+{
+    public class Appointment
+    {
+        [Key]
+        public ulong Id { get; set; }
+
+        [Required]
+        public string Title { get; set; }
+
+        [Required]
+        public DateTime Date { get; set; }
+
+        [Required]
+        public string Timezone { get; set; }
+
+        [Required]
+        public string Repetition { get; set; }
+
+        public ICollection<AppointmentNotification> Notifications { get; set; }
+    }
+}
