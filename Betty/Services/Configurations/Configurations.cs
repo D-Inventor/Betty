@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-
 using SimpleSettings;
 
 namespace Betty.Services
 {
-    public class Configurations
+    public class Configurations : IStreamProvider
     {
         private string logDirectory;
 
@@ -37,7 +36,7 @@ namespace Betty.Services
         [Group("Log settings"), Default(2), Description("Amount of log files that may exist before old files get deleted")]
         public int MaxLogFiles { get; set; }
 
-        public TextWriter LogfileProvider()
+        public TextWriter GetStream()
         {
             // make sure that the directory exists
             if (!Directory.Exists(LogDirectory))
@@ -64,16 +63,20 @@ namespace Betty.Services
 
         public void GetCurrentLogstate(out string currentLogFile, out bool fileLimitExceeded)
         {
-            // find the most recent logfile
-            IEnumerable<string> logfiles = Directory.GetFiles(LogDirectory).Where(x => Path.HasExtension(".log"));
+            // find all the logfiles
+            IEnumerable<string> logfiles = Directory.GetFiles(LogDirectory).Where(x => Path.GetExtension(x) == ".log");
             string path = null;
             if(logfiles.Any())
             {
+                // if there are any log files, find the one that is most recent
                 path = logfiles.Aggregate((x, y) => File.GetCreationTimeUtc(x) > File.GetCreationTimeUtc(y) ? x : y);
                 if (new FileInfo(path).Length > MaxLogSize)
+
+                    // only remember the file if it hasn't exceeded the maximum log size
                     path = null;
             }
 
+            // set the out variables to the desired values
             currentLogFile = path ?? Path.Combine(LogDirectory, $"log_{DateTime.UtcNow:yyyyMMdd_HHmmss}.log");
             fileLimitExceeded = logfiles.Count() > MaxLogFiles;
         }

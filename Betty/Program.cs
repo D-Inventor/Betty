@@ -53,7 +53,7 @@ namespace Betty
             Logger logger = new Logger
             {
                 LogSeverity = configurations.LogSeverity,
-                StreamProvider = configurations.LogfileProvider
+                StreamProvider = configurations
             };
 
             var serviceCollection = new ServiceCollection();

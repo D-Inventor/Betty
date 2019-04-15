@@ -10,13 +10,12 @@ namespace Betty.Services
 {
     public class Logger : ILogger, IDisposable
     {
-        private ConcurrentQueue<string> messagequeue;
-        private ManualResetEventSlim messagesavailable;
-        private Task loggertask;
-        private bool isdisposing = false;
+        private readonly ConcurrentQueue<string> messagequeue;
+        private readonly ManualResetEventSlim messagesavailable;
+        private readonly Task loggertask;
 
         public LogSeverity LogSeverity { get; set; }
-        public Func<TextWriter> StreamProvider { get; set; }
+        public IStreamProvider StreamProvider { get; set; }
 
         public Logger()
         {
@@ -32,16 +31,16 @@ namespace Betty.Services
         private void LoggerProcess()
         {
             // keep logging while this object is not being disposed
-            while (!isdisposing)
+            while (!isDisposing)
             {
                 // only wait if there are no messages in the queue
-                if(messagequeue.Count == 0)
+                if (messagequeue.Count == 0)
                     messagesavailable.Wait();
 
                 // get the output stream from the StreamProvider or get the null stream if StreamProvider is not set
-                using(TextWriter log = (StreamProvider ?? (() => TextWriter.Null)).Invoke())
+                using (TextWriter log = GetLogStream())
                 {
-                    while(messagequeue.TryDequeue(out string message))
+                    while (messagequeue.TryDequeue(out string message))
                     {
                         // write all the messages from the queue to the stream
                         log.WriteLine(message);
@@ -58,15 +57,24 @@ namespace Betty.Services
         }
 
         /// <summary>
+        /// Uses the given StreamProvider to create a Stream for log writing
+        /// </summary>
+        /// <returns>stream for the log to be written to</returns>
+        private TextWriter GetLogStream()
+        {
+            if (StreamProvider == null) return TextWriter.Null;
+            return StreamProvider.GetStream();
+        }
+
+        /// <summary>
         /// Adds a message to the log with given severity
         /// </summary>
         /// <param name="severity">severity of the message</param>
         /// <param name="message">message to be written</param>
         protected virtual void Log(LogSeverity severity, string source, object message)
         {
-            if (loggertask.IsFaulted)
-                // throw an exception if the logger process aborted prematurely
-                throw loggertask.Exception;
+            // throw an exception if the logger process aborted prematurely
+            if (loggertask.IsFaulted) { throw loggertask.Exception; }
 
             if (severity >= LogSeverity)
             {
@@ -88,15 +96,6 @@ namespace Betty.Services
         }
 
         /// <summary>
-        /// Write an error message to the log
-        /// </summary>
-        /// <param name="message">object to be logged</param>
-        public void LogError(string source, object message)
-        {
-            Log(LogSeverity.Error, source, message);
-        }
-
-        /// <summary>
         /// Write an info message to the log
         /// </summary>
         /// <param name="message">object to be logged</param>
@@ -113,32 +112,29 @@ namespace Betty.Services
         {
             Log(LogSeverity.Warning, source, message);
         }
+
+        /// <summary>
+        /// Write an error message to the log
+        /// </summary>
+        /// <param name="message">object to be logged</param>
+        public void LogError(string source, object message)
+        {
+            Log(LogSeverity.Error, source, message);
+        }
         #endregion
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool isDisposing = false;
 
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    // round off any logging and wait for the logger process to finish
-                    isdisposing = true;
-                    messagesavailable.Set();
-                    loggertask.Wait();
-                }
-
-                disposedValue = true;
-            }
-        }
-
-        // This code added to correctly implement the disposable pattern.
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
+            if (!isDisposing)
+            {
+                // round off any logging and wait for the logger process to finish
+                isDisposing = true;
+                messagesavailable.Set();
+                loggertask.Wait();
+            }
         }
         #endregion
     }

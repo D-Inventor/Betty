@@ -15,8 +15,7 @@ namespace Betty.UnitTest.Services
         public void Log_SeverityLowerThanMessage_WritesMessageToLog()
         {
             // arrange
-            StringBuilder sb = new StringBuilder();
-            Func<TextWriter> streamProvider = () => new StringWriter(sb);
+            FakeStreamProvider streamProvider = new FakeStreamProvider();
             using (Logger logger = new Logger())
             {
                 logger.StreamProvider = streamProvider;
@@ -27,7 +26,7 @@ namespace Betty.UnitTest.Services
             }
 
             // assert
-            string output = sb.ToString();
+            string output = streamProvider.StringBuilder.ToString();
 
             Assert.AreNotEqual(string.Empty, output);
         }
@@ -36,8 +35,7 @@ namespace Betty.UnitTest.Services
         public void Log_SeverityEqualToMessage_WritesMessageToLog()
         {
             // arrange
-            StringBuilder sb = new StringBuilder();
-            Func<TextWriter> streamProvider = () => new StringWriter(sb);
+            FakeStreamProvider streamProvider = new FakeStreamProvider();
             using (Logger logger = new Logger())
             {
                 logger.StreamProvider = streamProvider;
@@ -48,7 +46,7 @@ namespace Betty.UnitTest.Services
             }
 
             // assert
-            string output = sb.ToString();
+            string output = streamProvider.StringBuilder.ToString();
             Assert.AreNotEqual(string.Empty, output);
         }
 
@@ -56,8 +54,7 @@ namespace Betty.UnitTest.Services
         public void Log_LogSeverityHigherThanMessage_IgnoresMessage()
         {
             // arrange
-            StringBuilder sb = new StringBuilder();
-            Func<TextWriter> streamProvider = () => new StringWriter(sb);
+            FakeStreamProvider streamProvider = new FakeStreamProvider();
             using (Logger logger = new Logger())
             {
                 logger.StreamProvider = streamProvider;
@@ -68,9 +65,28 @@ namespace Betty.UnitTest.Services
             }
 
             // assert
-            string output = sb.ToString();
+            string output = streamProvider.StringBuilder.ToString();
 
             Assert.AreEqual(string.Empty, output);
+        }
+
+
+        /// <summary>
+        /// Test class that catches stream input into a string builder
+        /// </summary>
+        private class FakeStreamProvider : IStreamProvider
+        {
+            public FakeStreamProvider()
+            {
+                StringBuilder = new StringBuilder();
+            }
+
+            public StringBuilder StringBuilder { get; set; }
+
+            public TextWriter GetStream()
+            {
+                return new StringWriter(StringBuilder);
+            }
         }
     }
 }

@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Betty.Database
 {
+    /// <summary>
+    /// Database for betty.
+    /// </summary>
     public class BettyDB : DbContext
     {
         public DbSet<DiscordServer> DiscordServers { get; set; }
