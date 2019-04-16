@@ -9,15 +9,18 @@ namespace Betty.Database
     /// </summary>
     public class BettyDB : DbContext
     {
+        #region Tables
         public DbSet<DiscordServer> DiscordServers { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<Application> Applications { get; set; }
         public DbSet<DiscordAppointment> DiscordAppointments { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<AppointmentNotification> AppointmentNotifications { get; set; }
+        #endregion
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            // the database uses a local file
             optionsBuilder.UseSqlite($"Data Source={Path.Combine("data", "Database.db")}");
         }
 

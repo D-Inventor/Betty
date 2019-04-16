@@ -1,5 +1,5 @@
 ﻿using Betty.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using SimpleSettings;
 using System;
 using System.Collections.Generic;
@@ -10,25 +10,24 @@ using System.Threading.Tasks;
 
 namespace Betty.IntegrationTest.Services
 {
-    [TestClass]
     public class ConfigurationsTest
     {
         private string tempdirectoryname;
 
-        [TestInitialize]
+        [SetUp]
         public void InitialiseTest()
         {
             tempdirectoryname = Path.Combine(Directory.GetCurrentDirectory(), "integrationtests");
             Directory.CreateDirectory(tempdirectoryname);
         }
 
-        [TestCleanup]
+        [TearDown]
         public void CleanupTest()
         {
             Directory.Delete(tempdirectoryname, true);
         }
 
-        [TestMethod]
+        [Test]
         public void GetCurrentLogfile_ValidLogfilePresent_ReturnsLogfile()
         {
             // Arrange
@@ -46,7 +45,7 @@ namespace Betty.IntegrationTest.Services
             Assert.IsFalse(fileLimitExceeded);
         }
 
-        [TestMethod]
+        [Test]
         public void GetCurrentLogfile_NoLogfilesPresent_ReturnsNewName()
         {
             // Arrange
@@ -63,7 +62,7 @@ namespace Betty.IntegrationTest.Services
             Assert.IsFalse(fileLimitExceeded);
         }
 
-        [TestMethod]
+        [Test]
         public void GetCurrentLogfile_LogIsFull_ReturnsNewName()
         {
             // Arrange
@@ -88,7 +87,7 @@ namespace Betty.IntegrationTest.Services
             Assert.IsFalse(fileLimitExceeded);
         }
 
-        [TestMethod]
+        [Test]
         public void GetCurrentLogfile_TooManyLogfiles_fileLimitExceededIsTrue()
         {
             // Arrange
@@ -107,7 +106,7 @@ namespace Betty.IntegrationTest.Services
             Assert.IsTrue(fileLimitExceeded);
         }
 
-        [TestMethod]
+        [Test]
         public void GetCurrentLogfile_TwoLogFiles_ReturnsLatestFile()
         {
             // Arrange
@@ -127,7 +126,7 @@ namespace Betty.IntegrationTest.Services
             Assert.AreEqual(filename2, result);
         }
 
-        [TestMethod]
+        [Test]
         public void RemoveOldestLogfile_Twologfiles_DeletesOldest()
         {
             // Arrange

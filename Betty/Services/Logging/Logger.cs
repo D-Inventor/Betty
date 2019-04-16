@@ -11,7 +11,7 @@ namespace Betty.Services
     public class Logger : ILogger, IDisposable
     {
         private readonly ConcurrentQueue<string> messagequeue;
-        private readonly ManualResetEventSlim messagesavailable;
+        private readonly ManualResetEvent messagesavailable;
         private readonly Task loggertask;
 
         public LogSeverity LogSeverity { get; set; }
@@ -20,7 +20,7 @@ namespace Betty.Services
         public Logger()
         {
             messagequeue = new ConcurrentQueue<string>();
-            messagesavailable = new ManualResetEventSlim(false);
+            messagesavailable = new ManualResetEvent(false);
             loggertask = new Task(LoggerProcess, TaskCreationOptions.LongRunning);
             loggertask.Start();
         }
@@ -28,14 +28,14 @@ namespace Betty.Services
         /// <summary>
         /// Task that writes all messages in the queue to a log stream
         /// </summary>
-        private void LoggerProcess()
+        protected virtual void LoggerProcess()
         {
             // keep logging while this object is not being disposed
             while (!isDisposing)
             {
                 // only wait if there are no messages in the queue
                 if (messagequeue.Count == 0)
-                    messagesavailable.Wait();
+                    messagesavailable.WaitOne();
 
                 // get the output stream from the StreamProvider or get the null stream if StreamProvider is not set
                 using (TextWriter log = GetLogStream())
@@ -60,7 +60,7 @@ namespace Betty.Services
         /// Uses the given StreamProvider to create a Stream for log writing
         /// </summary>
         /// <returns>stream for the log to be written to</returns>
-        private TextWriter GetLogStream()
+        protected virtual TextWriter GetLogStream()
         {
             if (StreamProvider == null) return TextWriter.Null;
             return StreamProvider.GetStream();

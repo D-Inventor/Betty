@@ -1,72 +1,70 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
+using NUnit.Framework;
 using System.Text;
 
 using Betty.Services;
 using System.IO;
 
-namespace Betty.UnitTest.Services
+namespace Betty.NUnitTest.Services
 {
-    [TestClass]
     public class LoggerTest
     {
-        [TestMethod]
+        [Test]
         public void Log_SeverityLowerThanMessage_WritesMessageToLog()
         {
             // arrange
             FakeStreamProvider streamProvider = new FakeStreamProvider();
-            using (Logger logger = new Logger())
+            Logger logger = new Logger
             {
-                logger.StreamProvider = streamProvider;
-                logger.LogSeverity = LogSeverity.Info;
+                StreamProvider = streamProvider,
+                LogSeverity = LogSeverity.Info
+            };
 
-                // act
-                logger.LogWarning("Test", "DebugMessage");
-            }
+            // act
+            logger.LogWarning("Test", "DebugMessage");
+            logger.Dispose();
 
             // assert
             string output = streamProvider.StringBuilder.ToString();
-
             Assert.AreNotEqual(string.Empty, output);
         }
 
-        [TestMethod]
+        [Test]
         public void Log_SeverityEqualToMessage_WritesMessageToLog()
         {
             // arrange
             FakeStreamProvider streamProvider = new FakeStreamProvider();
-            using (Logger logger = new Logger())
+            Logger logger = new Logger
             {
-                logger.StreamProvider = streamProvider;
-                logger.LogSeverity = LogSeverity.Warning;
+                StreamProvider = streamProvider,
+                LogSeverity = LogSeverity.Warning
+            };
 
-                // act
-                logger.LogWarning("Test", "DebugMessage");
-            }
+            // act
+            logger.LogWarning("Test", "DebugMessage");
+            logger.Dispose();
 
             // assert
             string output = streamProvider.StringBuilder.ToString();
             Assert.AreNotEqual(string.Empty, output);
         }
 
-        [TestMethod]
+        [Test]
         public void Log_LogSeverityHigherThanMessage_IgnoresMessage()
         {
             // arrange
             FakeStreamProvider streamProvider = new FakeStreamProvider();
-            using (Logger logger = new Logger())
+            Logger logger = new Logger
             {
-                logger.StreamProvider = streamProvider;
-                logger.LogSeverity = LogSeverity.Error;
+                StreamProvider = streamProvider,
+                LogSeverity = LogSeverity.Error
+            };
 
-                // act
-                logger.LogWarning("Test", "DebugMessage");
-            }
+            // act
+            logger.LogWarning("Test", "DebugMessage");
+            logger.Dispose();
 
             // assert
             string output = streamProvider.StringBuilder.ToString();
-
             Assert.AreEqual(string.Empty, output);
         }
 

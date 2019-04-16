@@ -1,18 +1,14 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
+﻿using NUnit.Framework;
 using System.IO;
-using System.Text;
 
 using Betty.Services;
 using SimpleSettings;
 
-namespace Betty.UnitTest.Services
+namespace Betty.NUnitTest.Services
 {
-    [TestClass]
     public class ConfigurationsTest
     {
-        [TestMethod]
+        [Test]
         public void LogDirectory_PathWasProvided_ReturnsFullPath()
         {
             // Arrange
@@ -29,7 +25,7 @@ namespace Betty.UnitTest.Services
             Assert.AreEqual(expected, result);
         }
 
-        [TestMethod]
+        [Test]
         public void LogDirectory_NoPathWasProvided_ReturnsDefaultPath()
         {
             // Arrange
