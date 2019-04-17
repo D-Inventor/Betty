@@ -30,8 +30,8 @@ namespace Betty.Services
         /// </summary>
         protected virtual void LoggerProcess()
         {
-            // keep logging while this object is not being disposed
-            while (!isDisposing)
+            // keep logging while this object is not being disposed and go through the logging sequence at least once.
+            do
             {
                 // only wait if there are no messages in the queue
                 if (messagequeue.Count == 0)
@@ -53,7 +53,7 @@ namespace Betty.Services
 
                 // reset the awaitable event
                 messagesavailable.Reset();
-            }
+            } while (!isDisposing);
         }
 
         /// <summary>

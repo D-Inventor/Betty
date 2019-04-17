@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Betty.Utilities.DateTimeUtilities
 {
@@ -55,8 +56,8 @@ namespace Betty.Utilities.DateTimeUtilities
 
             // create and start the background process
             cancellationTokenSource = new CancellationTokenSource();
-            backgroundProcess = new Task(async () => await WaiterTask(), cancellationTokenSource.Token, TaskCreationOptions.LongRunning);
-            backgroundProcess.ContinueWith((_) => cancellationTokenSource.Dispose());
+            backgroundProcess = new Task(() => { WaiterTask().Wait(); }, cancellationTokenSource.Token, TaskCreationOptions.LongRunning);
+            backgroundProcess.ContinueWith((_) => { cancellationTokenSource.Dispose(); });
             backgroundProcess.Start();
         }
 

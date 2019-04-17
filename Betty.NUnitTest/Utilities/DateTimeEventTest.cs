@@ -34,5 +34,20 @@ namespace Betty.NUnitTest.Utilities
             Assert.AreEqual(input, dte.Target);
             dte.Stop();
         }
+
+        [Test]
+        public void Start_ActiveEvent_ThrowsInvalidOperationException()
+        {
+            // arrange
+            DateTimeEvent dte = new DateTimeEvent();
+            dte.Start(DateTime.UtcNow.AddDays(2));
+
+            // act
+            TestDelegate result = () => dte.Start(DateTime.UtcNow.AddDays(1));
+
+            // assert
+            Assert.Throws<InvalidOperationException>(result);
+            dte.Stop();
+        }
     }
 }

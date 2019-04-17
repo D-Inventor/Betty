@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Betty.IntegrationTest.Services
+namespace Betty.NUnitIntegrationTest.Services
 {
     public class ConfigurationsTest
     {
@@ -113,8 +113,10 @@ namespace Betty.IntegrationTest.Services
             string filename = Path.Combine(tempdirectoryname, "mylog.log");
             string filename2 = Path.Combine(tempdirectoryname, "Amylog2.log");
             File.Create(filename).Close();
-            Thread.Sleep(1000);
             File.Create(filename2).Close();
+            File.SetCreationTimeUtc(filename, DateTime.UtcNow - new TimeSpan(0, 2, 0));
+            File.SetCreationTimeUtc(filename2, DateTime.UtcNow - new TimeSpan(0, 1, 0));
+
             Configurations configurations;
             using (StringReader sr = new StringReader($"LogDirectory:{tempdirectoryname}"))
                 configurations = Settings.FromFile<Configurations>(sr);
