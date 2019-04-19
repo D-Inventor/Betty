@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,15 +31,44 @@ namespace Betty.Services
         /// One should be able to plan an appointment
         /// </summary>
         /// <param name="appointment">The appointment to be planned</param>
-        public async Task<MethodResult> Plan(Appointment appointment)
+        public async Task<MethodResult> PlanAsync(Appointment appointment)
         {
-            throw new NotImplementedException();
+            ILogger logger = services.GetService<ILogger>();
+
+            using(var database = services.GetRequiredService<BettyDB>())
+            {
+                // check that appointment has all required fields
+                var validationContext = new ValidationContext(appointment);
+                try
+                {
+                    // attempt to validate
+                    Validator.ValidateObject(appointment, validationContext);
+                }
+                catch(ValidationException e)
+                {
+                    // try log failure
+                    if (logger != null)
+                        logger.LogError("Agenda", "Attempted to plan appointment, but failed: The appointment was invalid.");
+                    throw new ArgumentException("The given appointment is not valid.", e);
+                }
+
+                // check that the appointment is valid
+                MethodResult result = ValidateAppointment(appointment);
+                if (result != MethodResult.success) { return result; }
+
+                // add the appointment to the database
+                database.Appointments.Add(appointment);
+                await database.SaveChangesAsync();
+            }
+
+            // return success
+            return MethodResult.success;
         }
 
         /// <summary>
         /// One should be able to cancel an appointment
         /// </summary>
-        public async Task<MethodResult> Cancel(ulong id)
+        public async Task<MethodResult> CancelAsync(ulong id)
         {
             ILogger logger = services.GetService<ILogger>();
             using (var database = services.GetRequiredService<BettyDB>())

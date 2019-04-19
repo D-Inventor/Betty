@@ -32,7 +32,7 @@ namespace Betty.NUnitIntegrationTest.Services
 
                 using (var database = new BettyDB(options))
                 {
-                    database.Database.EnsureCreated();
+                    await database.Database.EnsureCreatedAsync();
                 }
 
                 // arrange
@@ -49,7 +49,7 @@ namespace Betty.NUnitIntegrationTest.Services
                 };
 
                 // act
-                var result = agenda.Plan(appointment);
+                var result = await agenda.PlanAsync(appointment);
 
                 // assert
                 Assert.AreEqual(MethodResult.success, result);
@@ -82,7 +82,7 @@ namespace Betty.NUnitIntegrationTest.Services
 
                 using (var database = new BettyDB(options))
                 {
-                    database.Database.EnsureCreated();
+                    await database.Database.EnsureCreatedAsync();
                 }
 
                 // arrange
@@ -98,10 +98,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 };
 
                 // act
-                void Result() => agenda.Plan(appointment);
+                async Task Result() => await agenda.PlanAsync(appointment);
 
                 // assert
-                Assert.Throws<ArgumentException>(Result);
+                Assert.ThrowsAsync<ArgumentException>(Result);
                 using (var database = new BettyDB(options))
                 {
                     var dbresult = from app in database.Appointments
@@ -130,7 +130,7 @@ namespace Betty.NUnitIntegrationTest.Services
 
                 using (var database = new BettyDB(options))
                 {
-                    database.Database.EnsureCreated();
+                    await database.Database.EnsureCreatedAsync();
                 }
 
                 // arrange
@@ -147,7 +147,7 @@ namespace Betty.NUnitIntegrationTest.Services
                 };
 
                 // act
-                var result = agenda.Plan(appointment);
+                var result = await agenda.PlanAsync(appointment);
 
                 // assert
                 Assert.AreEqual(Agenda.dateinvalid, result);
@@ -179,7 +179,7 @@ namespace Betty.NUnitIntegrationTest.Services
 
                 using (var database = new BettyDB(options))
                 {
-                    database.Database.EnsureCreated();
+                    await database.Database.EnsureCreatedAsync();
                 }
 
                 // arrange
@@ -196,7 +196,7 @@ namespace Betty.NUnitIntegrationTest.Services
                 };
 
                 // act
-                var result = agenda.Plan(appointment);
+                var result = await agenda.PlanAsync(appointment);
 
                 // assert
                 Assert.AreEqual(Agenda.datepassed, result);
@@ -258,7 +258,7 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // act
-                var result = await agenda.Cancel(appointment.Id);
+                var result = await agenda.CancelAsync(appointment.Id);
 
                 // assert
                 Assert.AreEqual(MethodResult.success, result);
@@ -315,7 +315,7 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // act
-                var result = await agenda.Cancel(appointment.Id + 1);
+                var result = await agenda.CancelAsync(appointment.Id + 1);
 
                 // assert
                 Assert.AreEqual(MethodResult.notfound, result);

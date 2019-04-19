@@ -18,9 +18,15 @@ namespace Betty.Utilities
             this.message = message;
         }
 
+        #region operators
         public bool Equals(MethodResult other)
         {
             return code == other.code;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj.GetType() == typeof(MethodResult) && Equals((MethodResult)obj);
         }
 
         public override int GetHashCode()
@@ -28,8 +34,16 @@ namespace Betty.Utilities
             return HashCode.Combine(code);
         }
 
+        public static bool operator ==(MethodResult a, MethodResult b) => a.Equals(b);
+        public static bool operator !=(MethodResult a, MethodResult b) => !a.Equals(b);
+        public static bool operator ==(MethodResult a, int b) => a.code == b;
+        public static bool operator !=(MethodResult a, int b) => a.code != b;
+        #endregion
+
+        #region general purpose result instances
         public static readonly MethodResult success = new MethodResult(0, "The method executed succesfully.");
         public static readonly MethodResult notfound = new MethodResult(1, "The resource was not found");
         public static readonly MethodResult unknownfailure = new MethodResult(-1, "The method failed to execute due to an unknown error.");
+        #endregion
     }
 }
