@@ -16,7 +16,7 @@ namespace Betty.Database
         public DateTime Date { get; set; }
 
         [Required]
-        public string Timezone { get; set; }
+        public TimeZoneInfo Timezone { get; set; }
 
         [Required]
         public string Repetition { get; set; }

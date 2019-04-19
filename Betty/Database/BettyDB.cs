@@ -1,6 +1,9 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 using Microsoft.EntityFrameworkCore;
+
+using TimeZoneConverter;
 
 namespace Betty.Database
 {
@@ -18,10 +21,16 @@ namespace Betty.Database
         public DbSet<AppointmentNotification> AppointmentNotifications { get; set; }
         #endregion
 
+        public BettyDB() : base() { }
+        public BettyDB(DbContextOptions<BettyDB> options) : base(options) { }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            // the database uses a local file
-            optionsBuilder.UseSqlite($"Data Source={Path.Combine("data", "Database.db")}");
+            if (!optionsBuilder.IsConfigured)
+            {
+                // the database uses a local file
+                optionsBuilder.UseSqlite($"Data Source={Path.Combine("data", "Database.db")}");
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,6 +38,12 @@ namespace Betty.Database
             // the discord appointment has a key as the composite of two columns
             modelBuilder.Entity<DiscordAppointment>()
                 .HasKey(p => new { p.DiscordServerId, p.AppointmentId });
+
+            modelBuilder.Entity<Appointment>()
+                .Property(t => t.Timezone)
+                .HasConversion(
+                    v => v.Id,
+                    v => TZConvert.GetTimeZoneInfo(v));
         }
     }
 }
