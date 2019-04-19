@@ -236,12 +236,20 @@ namespace Betty.NUnitIntegrationTest.Services
                     .AddTransient(x => new BettyDB(options))
                     .BuildServiceProvider();
                 Agenda agenda = new Agenda(services);
+                AppointmentNotification[] notifications = new AppointmentNotification[]
+                {
+                    new AppointmentNotification
+                    {
+                        Offset = new TimeSpan(1, 0, 0),
+                    }
+                };
                 Appointment appointment = new Appointment
                 {
                     Date = DateTime.UtcNow.AddDays(2),
                     Timezone = TimeZoneInfo.Utc,
                     Repetition = "once",
-                    Title = "My cancelled appointment"
+                    Title = "My cancelled appointment",
+                    Notifications = notifications
                 };
                 using (var database = new BettyDB(options))
                 {
@@ -259,6 +267,9 @@ namespace Betty.NUnitIntegrationTest.Services
                     var dbresult = from app in database.Appointments
                                    select app;
                     Assert.AreEqual(0, dbresult.Count());
+                    var dbresultnot = from appnot in database.AppointmentNotifications
+                                      select appnot;
+                    Assert.AreEqual(0, dbresultnot.Count());
                 }
             }
             finally
