@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Betty.Database;
 using Betty.Services;
+using Betty.Utilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,9 +48,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 };
 
                 // act
-                agenda.Plan(appointment);
-                
+                var result = agenda.Plan(appointment);
+
                 // assert
+                Assert.AreEqual(MethodResult.success, result);
                 using (var database = new BettyDB(options))
                 {
                     Appointment a = (from app in database.Appointments
@@ -233,15 +235,83 @@ namespace Betty.NUnitIntegrationTest.Services
                     .AddTransient(x => new BettyDB(options))
                     .BuildServiceProvider();
                 Agenda agenda = new Agenda(services);
+                Appointment appointment = new Appointment
+                {
+                    Date = DateTime.UtcNow.AddDays(2),
+                    Timezone = TimeZoneInfo.Utc,
+                    Repetition = "once",
+                    Title = "My cancelled appointment"
+                };
                 using (var database = new BettyDB(options))
                 {
-                    database.Appointments.Add(new Appointment
-                    {
-                        Date = DateTime.UtcNow.AddDays(2),
-                        Timezone = TimeZoneInfo.Utc,
-                        Repetition = "once",
-                        Title = "My cancelled appointment"
-                    });
+                    database.Appointments.Add(appointment);
+                    database.SaveChanges();
+                }
+
+                // act
+                var result = agenda.Cancel(appointment.Id);
+
+                // assert
+                Assert.AreEqual(MethodResult.success, result);
+                using(var database = new BettyDB(options))
+                {
+                    var dbresult = from app in database.Appointments
+                                   select app;
+                    Assert.AreEqual(0, dbresult.Count());
+                }
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        [Test, Description("Test if 'Cancel' method returns a 'not found' result when appointment with given id does not exist.")]
+        public void Cancel_AppointmentDoesNotExist_ReturnsMethodResult1()
+        {
+            // create database connection
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<BettyDB>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                using (var database = new BettyDB(options))
+                {
+                    database.Database.EnsureCreated();
+                }
+
+                // arrange
+                IServiceProvider services = new ServiceCollection()
+                    .AddTransient(x => new BettyDB(options))
+                    .BuildServiceProvider();
+                Agenda agenda = new Agenda(services);
+                Appointment appointment = new Appointment
+                {
+                    Date = DateTime.UtcNow.AddDays(2),
+                    Timezone = TimeZoneInfo.Utc,
+                    Repetition = "once",
+                    Title = "My cancelled appointment"
+                };
+                using (var database = new BettyDB(options))
+                {
+                    database.Appointments.Add(appointment);
+                    database.SaveChanges();
+                }
+
+                // act
+                var result = agenda.Cancel(appointment.Id + 1);
+
+                // assert
+                Assert.AreEqual(MethodResult.notfound, result);
+                using (var database = new BettyDB(options))
+                {
+                    var dbresult = from app in database.Appointments
+                                   select app;
+                    Assert.AreEqual(1, dbresult.Count());
                 }
             }
             finally

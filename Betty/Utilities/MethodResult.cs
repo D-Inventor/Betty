@@ -29,6 +29,7 @@ namespace Betty.Utilities
         }
 
         public static readonly MethodResult success = new MethodResult(0, "The method executed succesfully.");
+        public static readonly MethodResult notfound = new MethodResult(1, "The resource was not found");
         public static readonly MethodResult unknownfailure = new MethodResult(-1, "The method failed to execute due to an unknown error.");
     }
 }
