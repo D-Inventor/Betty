@@ -13,7 +13,6 @@ namespace Betty.Utilities.DateTimeUtilities
     /// </summary>
     public class DateTimeEvent
     {
-        private readonly List<Action<DateTime>> subscribers;
         private Task backgroundProcess;
         private CancellationTokenSource cancellationTokenSource;
         private readonly object activationLocker = new object();
@@ -23,7 +22,6 @@ namespace Betty.Utilities.DateTimeUtilities
         /// </summary>
         public DateTimeEvent()
         {
-            subscribers = new List<Action<DateTime>>();
             backgroundProcess = null;
             cancellationTokenSource = null;
             IsActive = false;
@@ -78,15 +76,8 @@ namespace Betty.Utilities.DateTimeUtilities
                 await Task.Delay((int)waittime);
             }
 
-            // lock subscribers so that nobody can subscribe while notifications are happening
-            lock (subscribers)
-            {
-                // notify all subscribers
-                foreach (var s in subscribers)
-                {
-                    s(Target);
-                }
-            }
+            // notify subscribers
+            DateTimeReached(Target);
 
             IsActive = false;
         }
@@ -96,21 +87,21 @@ namespace Betty.Utilities.DateTimeUtilities
         /// </summary>
         public void Stop()
         {
-            // lock prevents stop in the middle of a notification
-            lock (subscribers)
-            {
-                IsActive = false;
-                if(cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested) { cancellationTokenSource.Cancel(); }
-            }
+            IsActive = false;
+            if(cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested) { cancellationTokenSource.Cancel(); }
         }
 
+        #region events
         /// <summary>
         /// One should be able to be notified when this datetime is reached.
         /// </summary>
-        public event Action<DateTime> OnDateTimeReached
+        public event EventHandler<DateTime> OnDateTimeReached;
+
+        protected virtual void DateTimeReached(DateTime arg)
         {
-            add { lock (subscribers) { subscribers.Add(value); } }
-            remove { lock (subscribers) { subscribers.Remove(value); } }
+            EventHandler<DateTime> handler = OnDateTimeReached;
+            handler?.Invoke(this, arg);
         }
+        #endregion
     }
 }

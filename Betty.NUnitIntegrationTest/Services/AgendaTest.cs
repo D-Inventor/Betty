@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Betty.Database;
 using Betty.Services;
 using Betty.Utilities;
+using Betty.Utilities.DateTimeUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,12 +41,20 @@ namespace Betty.NUnitIntegrationTest.Services
                     .AddTransient(x => new BettyDB(options))
                     .BuildServiceProvider();
                 Agenda agenda = new Agenda(services);
+                AppointmentNotification[] notifications = new AppointmentNotification[]
+                {
+                    new AppointmentNotification
+                    {
+                        Offset = TimeSpan.FromMinutes(30)
+                    }
+                };
                 Appointment appointment = new Appointment
                 {
                     Date = DateTime.UtcNow.AddDays(2),
-                    Repetition = "once",
+                    Repetition = Repetition.FromId("o"),
                     Title = "My Appointment",
-                    Timezone = TimeZoneInfo.Utc
+                    Timezone = TimeZoneInfo.Utc,
+                    Notifications = notifications
                 };
 
                 // act
@@ -57,7 +66,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 {
                     Appointment a = (from app in database.Appointments
                                      select app).FirstOrDefault();
-                    Assert.AreEqual(appointment, a);
+                    Assert.AreEqual(appointment.Id, a.Id);
+                    AppointmentNotification n = (from app in database.AppointmentNotifications
+                                                 select app).FirstOrDefault();
+                    Assert.AreEqual(notifications[0].Id, n.Id);
                 }
             }
             finally
@@ -94,7 +106,7 @@ namespace Betty.NUnitIntegrationTest.Services
                 {
                     Date = DateTime.UtcNow.AddDays(2),
                     Timezone = TimeZoneInfo.Utc,
-                    Repetition = "once"
+                    Repetition = Repetition.FromId("o")
                 };
 
                 // act
@@ -143,7 +155,7 @@ namespace Betty.NUnitIntegrationTest.Services
                     Date = new DateTime(2022, 3, 27, 2, 30, 0),   // this time should not exist, because the time skips from 2am to 3am 
                     Timezone = TZConvert.GetTimeZoneInfo("Central European Standard Time"),
                     Title = "dst skips this hour",
-                    Repetition = "once",
+                    Repetition = Repetition.FromId("o"),
                 };
 
                 // act
@@ -192,7 +204,7 @@ namespace Betty.NUnitIntegrationTest.Services
                     Date = new DateTime(2018, 3, 4),
                     Timezone = TimeZoneInfo.Utc,
                     Title = "My past event",
-                    Repetition = "once",
+                    Repetition = Repetition.FromId("o"),
                 };
 
                 // act
@@ -209,6 +221,67 @@ namespace Betty.NUnitIntegrationTest.Services
             }
             finally
             {
+                connection.Close();
+            }
+        }
+
+        [Test, Description("Test if the 'Plan' method does not add any notifications to the database that are in the past.")]
+        public async Task Plan_NotificationInThePast_DatabaseDoesNotContainNotification()
+        {
+            // create database connection
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<BettyDB>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                using (var database = new BettyDB(options))
+                {
+                    await database.Database.EnsureCreatedAsync();
+                }
+
+                // arrange
+                IServiceProvider services = new ServiceCollection()
+                    .AddTransient(x => new BettyDB(options))
+                    .BuildServiceProvider();
+                Agenda agenda = new Agenda(services);
+                AppointmentNotification[] notifications = new AppointmentNotification[]
+                {
+                    new AppointmentNotification
+                    {
+                        Offset = TimeSpan.FromHours(2)
+                    }
+                };
+                Appointment appointment = new Appointment
+                {
+                    Date = DateTime.UtcNow.AddHours(1),
+                    Repetition = Repetition.FromId("o"),
+                    Title = "My Appointment",
+                    Timezone = TimeZoneInfo.Utc,
+                    Notifications = notifications
+                };
+
+                // act
+                var result = await agenda.PlanAsync(appointment);
+
+                // assert
+                Assert.AreEqual(MethodResult.success, result);
+                using (var database = new BettyDB(options))
+                {
+                    Appointment a = (from app in database.Appointments
+                                     select app).FirstOrDefault();
+                    Assert.AreEqual(appointment.Id, a.Id);
+                    var n = from app in database.AppointmentNotifications
+                            select app;
+                    Assert.AreEqual(0, n.Count(), $"Expected 0 elements in the database, but was {n.Count()}");
+                }
+            }
+            finally
+            {
+                // close database connection
                 connection.Close();
             }
         }
@@ -247,7 +320,7 @@ namespace Betty.NUnitIntegrationTest.Services
                 {
                     Date = DateTime.UtcNow.AddDays(2),
                     Timezone = TimeZoneInfo.Utc,
-                    Repetition = "once",
+                    Repetition = Repetition.FromId("o"),
                     Title = "My cancelled appointment",
                     Notifications = notifications
                 };
@@ -305,7 +378,7 @@ namespace Betty.NUnitIntegrationTest.Services
                 {
                     Date = DateTime.UtcNow.AddDays(2),
                     Timezone = TimeZoneInfo.Utc,
-                    Repetition = "once",
+                    Repetition = Repetition.FromId("o"),
                     Title = "My cancelled appointment"
                 };
                 using (var database = new BettyDB(options))

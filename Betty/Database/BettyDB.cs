@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-
+using Betty.Utilities.DateTimeUtilities;
 using Microsoft.EntityFrameworkCore;
 
 using TimeZoneConverter;
@@ -44,6 +44,12 @@ namespace Betty.Database
                 .HasConversion(
                     v => v.Id,
                     v => TZConvert.GetTimeZoneInfo(v));
+
+            modelBuilder.Entity<Appointment>()
+                .Property(t => t.Repetition)
+                .HasConversion(
+                    v => v.Id,
+                    v => Repetition.FromId(v));
         }
     }
 }

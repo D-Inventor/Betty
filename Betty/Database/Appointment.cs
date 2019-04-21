@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Betty.Utilities.DateTimeUtilities;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -19,7 +20,7 @@ namespace Betty.Database
         public TimeZoneInfo Timezone { get; set; }
 
         [Required]
-        public string Repetition { get; set; }
+        public Repetition Repetition { get; set; }
 
         public ICollection<AppointmentNotification> Notifications { get; set; }
     }
