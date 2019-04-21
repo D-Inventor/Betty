@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Betty.Utilities.DateTimeUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using SimpleSettings;
 
 namespace Betty.Services
 {
     public class Configurations : IStreamProvider
     {
+        #region Configurations
         private string logDirectory;
 
         [Group("Discord settings"), Default("YOUR SECRET TOKEN"), Description("The secret token for the bot to connect to discord")]
@@ -35,6 +38,14 @@ namespace Betty.Services
 
         [Group("Log settings"), Default(2), Description("Amount of log files that may exist before old files get deleted")]
         public int MaxLogFiles { get; set; }
+        #endregion
+
+        public IServiceProvider Services { get; set; }
+
+        public Configurations(IServiceProvider services = null)
+        {
+            Services = services;
+        }
 
         public TextWriter GetStream()
         {
@@ -77,7 +88,8 @@ namespace Betty.Services
             }
 
             // set the out variables to the desired values
-            currentLogFile = path ?? Path.Combine(LogDirectory, $"log_{DateTime.UtcNow:yyyyMMdd_HHmmss}.log");
+            IDateTimeProvider dateTimeProvider = Services?.GetService<IDateTimeProvider>() ?? new DateTimeProvider();
+            currentLogFile = path ?? Path.Combine(LogDirectory, $"log_{dateTimeProvider.UtcNow:yyyyMMdd_HHmmss}.log");
             fileLimitExceeded = logfiles.Count() > MaxLogFiles;
         }
     }

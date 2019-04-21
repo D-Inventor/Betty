@@ -16,17 +16,17 @@ namespace Betty.Services
     /// <summary>
     /// An agenda is a combination of a database and a datetime event.
     /// </summary>
-    public class Agenda
+    public class Agenda : IDisposable
     {
-        private readonly IServiceProvider services;
         private readonly DateTimeEvent dateTimeEvent;
+        public IServiceProvider Services { get; set; }
 
         /// <summary>
         /// One should be able to make an agenda
         /// </summary>
         public Agenda(IServiceProvider services)
         {
-            this.services = services;
+            Services = services;
             dateTimeEvent = new DateTimeEvent();
             dateTimeEvent.OnDateTimeReached += DateTimeEvent_OnDateTimeReached;
         }
@@ -37,9 +37,10 @@ namespace Betty.Services
         /// <param name="appointment">The appointment to be planned</param>
         public async Task<MethodResult> PlanAsync(Appointment appointment)
         {
-            ILogger logger = services.GetService<ILogger>();
+            ILogger logger = Services.GetService<ILogger>();
+            IDateTimeProvider dateTimeProvider = Services.GetService<IDateTimeProvider>() ?? new DateTimeProvider();
 
-            using (var database = services.GetRequiredService<BettyDB>())
+            using (var database = Services.GetRequiredService<BettyDB>())
             {
                 // check that appointment has all required fields
                 var validationContext = new ValidationContext(appointment);
@@ -61,7 +62,7 @@ namespace Betty.Services
                 if (result != MethodResult.success) { return result; }
 
                 // filter out all notifications that have already passed
-                appointment.Notifications = appointment.Notifications?.Where(a => TimeZoneInfo.ConvertTimeToUtc(appointment.Date, appointment.Timezone) - a.Offset > DateTime.UtcNow.AddMinutes(2)).ToList();
+                appointment.Notifications = appointment.Notifications?.Where(a => TimeZoneInfo.ConvertTimeToUtc(appointment.Date, appointment.Timezone) - a.Offset > dateTimeProvider.UtcNow.AddMinutes(2)).ToList();
 
                 // add the appointment to the database
                 database.Appointments.Add(appointment);
@@ -77,8 +78,8 @@ namespace Betty.Services
         /// </summary>
         public async Task<MethodResult> CancelAsync(ulong id)
         {
-            ILogger logger = services.GetService<ILogger>();
-            using (var database = services.GetRequiredService<BettyDB>())
+            ILogger logger = Services.GetService<ILogger>();
+            using (var database = Services.GetRequiredService<BettyDB>())
             {
                 // try get the given appointment from the database
                 Appointment appointment = (from app in database.Appointments.Include(a => a.Notifications)
@@ -109,54 +110,88 @@ namespace Betty.Services
         /// <returns></returns>
         private MethodResult ValidateAppointment(Appointment appointment)
         {
+            IDateTimeProvider dateTimeProvider = Services.GetService<IDateTimeProvider>() ?? new DateTimeProvider();
+
             // a date has to be valid.
             if (appointment.Timezone.IsInvalidTime(appointment.Date)) { return dateinvalid; }
 
             DateTime utcdate = TimeZoneInfo.ConvertTimeToUtc(appointment.Date, appointment.Timezone);
 
             // a date should be at least 2 minutes into the future.
-            if (utcdate < DateTime.UtcNow.AddMinutes(2)) { return datepassed; }
+            if (utcdate < dateTimeProvider.UtcNow.AddMinutes(2)) { return datepassed; }
 
             return MethodResult.success;
         }
 
+        #region IDisposable implementation
+        public void Dispose()
+        {
+            dateTimeEvent?.Stop();
+        }
+        #endregion
+
         private void DateTimeEvent_OnDateTimeReached(object source, DateTime arg)
         {
-            ILogger logger = services.GetService<ILogger>();
-            if (logger != null) { logger.LogInfo("Agenda", "A notification date was reached. Subscribers will get notified."); }
+            ILogger logger = Services.GetService<ILogger>();
+            if (logger != null) { logger.LogInfo("Agenda", "A notification date was reached."); }
 
-            IList<Appointment> appointments;
-            using (var database = services.GetRequiredService<BettyDB>())
+            using (var database = Services.GetRequiredService<BettyDB>())
             {
                 // find all appointments which are due or have a notification which is due.
-                appointments = (from app in database.Appointments.Include(a => a.Notifications)
-                                let t = TimeZoneInfo.ConvertTimeToUtc(app.Date, app.Timezone)
-                                where t == arg || app.Notifications.Any(n => t - n.Offset == arg)
-                                select app).ToList();
+                var appointments = from app in database.Appointments.Include(a => a.Notifications)
+                                   let t = TimeZoneInfo.ConvertTimeToUtc(app.Date, app.Timezone)
+                                   where t == arg || app.Notifications.Any(n => t - n.Offset == arg)
+                                   select new AppointmentEventArgs { Appointment = app, Notification = app.Notifications.FirstOrDefault(n => t - n.Offset == arg) };
 
-                // notify all subscribers of each event
-                foreach (Appointment a in appointments)
+                foreach (var a in appointments)
                 {
-                    //foreach (var s in subscribers)
-                    //{
-                    //    s(a);
-                    //}
+                    // notify all subscribers of each event
+                    AppointmentDue(a);
 
-                    // remove either a notification or the appointment itself from the database
-                    AppointmentNotification appnot = a.Notifications.OrderByDescending(n => n.Offset).FirstOrDefault();
-                    if (appnot != null) { database.AppointmentNotifications.Remove(appnot); }
-                    else { database.Appointments.Remove(a); }
+                    if(a.Appointment.Date == arg)
+                    {
+                        // if the appointment itself is now due, either update or remove it.
+                        if(a.Appointment.Repetition.Unit == RepetitionUnit.Once)
+                        {
+                            // if this event was only once, remove it from the database
+                            database.RemoveRange(a.Appointment.Notifications);
+                            database.Remove(a.Appointment);
+                        }
+                        else
+                        {
+                            // if this appointment was repetitive, update the date to a new date.
+                            a.Appointment.Date = a.Appointment.Repetition.GetNext(a.Appointment.Date, a.Appointment.Timezone);
+                            database.Update(a.Appointment);
+                        }
+                    }
                 }
 
                 database.SaveChanges();
-
-                // find the next date to be notified of
             }
+
+            // restart the datetime event with the next upcoming date
+            DateTime? newDate = GetNextNotificationDate();
+            if(newDate.HasValue) { dateTimeEvent.Start(newDate.Value); }
         }
 
-        private DateTime GetNextNotificationDate()
+        private DateTime? GetNextNotificationDate()
         {
-            throw new NotImplementedException();
+            using(var database = Services.GetRequiredService<BettyDB>())
+            {
+                IDateTimeProvider dateTimeProvider = Services.GetService<IDateTimeProvider>() ?? new DateTimeProvider();
+                DateTime utcnow = dateTimeProvider.UtcNow;
+                var dates = from date in
+                                (from app in database.Appointments
+                                 select TimeZoneInfo.ConvertTimeToUtc(app.Date, app.Timezone))
+                                 .Union(from not in database.AppointmentNotifications.Include(n => n.Appointment)
+                                        select TimeZoneInfo.ConvertTime(not.Appointment.Date, not.Appointment.Timezone) - not.Offset)
+                            where date > utcnow
+                            orderby date
+                            select date;
+
+                if (dates.Any()) { return dates.First(); }
+                return null;
+            }
         }
 
         #region events
@@ -176,9 +211,27 @@ namespace Betty.Services
     }
 
 
+
+
+
+
+
+
+
+
+    /// <summary>
+    /// Event arguments container for agenda events
+    /// </summary>
     public class AppointmentEventArgs
     {
+        /// <summary>
+        /// The appointment which is being notified of
+        /// </summary>
         public Appointment Appointment { get; set; }
+
+        /// <summary>
+        /// The notification that triggered the event if any
+        /// </summary>
         public AppointmentNotification Notification { get; set; }
     }
 }

@@ -5,6 +5,8 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Betty.Utilities.DateTimeUtilities;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Betty.Services
 {
@@ -16,9 +18,11 @@ namespace Betty.Services
 
         public LogSeverity LogSeverity { get; set; }
         public IStreamProvider StreamProvider { get; set; }
+        public IServiceProvider Services { get; set; }
 
-        public Logger()
+        public Logger(IServiceProvider services = null)
         {
+            Services = services;
             messagequeue = new ConcurrentQueue<string>();
             messagesavailable = new ManualResetEvent(false);
             loggertask = new Task(LoggerProcess, TaskCreationOptions.LongRunning);
@@ -79,7 +83,8 @@ namespace Betty.Services
             if (severity >= LogSeverity)
             {
                 // add the message to the queue if it is severe enough
-                string messagestr = $"[{DateTime.UtcNow}][{severity.ToString().PadLeft(7)}] {source.PadLeft(20)}:{message.ToString()}";
+                IDateTimeProvider dateTimeProvider = Services?.GetService<IDateTimeProvider>() ?? new DateTimeProvider();
+                string messagestr = $"[{dateTimeProvider.UtcNow}][{severity.ToString().PadLeft(7)}] {source.PadLeft(20)}:{message.ToString()}";
                 messagequeue.Enqueue(messagestr);
                 messagesavailable.Set();
             }

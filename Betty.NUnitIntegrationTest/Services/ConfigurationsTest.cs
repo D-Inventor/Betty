@@ -1,4 +1,6 @@
 ﻿using Betty.Services;
+using Betty.Utilities.DateTimeUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using SimpleSettings;
 using System;
@@ -33,9 +35,9 @@ namespace Betty.NUnitIntegrationTest.Services
             // Arrange
             string filename = Path.Combine(tempdirectoryname, "mylog.log");
             File.Create(filename).Close();
-            Configurations configurations;
+            Configurations configurations = new Configurations();
             using (StringReader sr = new StringReader($"LogDirectory:{tempdirectoryname}"))
-                configurations = Settings.FromFile<Configurations>(sr);
+                Settings.FromFile(configurations, sr);
 
             // Act
             configurations.GetCurrentLogstate(out string result, out bool fileLimitExceeded);
@@ -49,16 +51,18 @@ namespace Betty.NUnitIntegrationTest.Services
         public void GetCurrentLogfile_NoLogfilesPresent_ReturnsNewName()
         {
             // Arrange
-            Configurations configurations;
+            FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
+            IServiceProvider services = new ServiceCollection().AddSingleton<IDateTimeProvider>(dateTimeProvider).BuildServiceProvider();
+            dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            Configurations configurations = new Configurations(services);
             using (StringReader sr = new StringReader($"LogDirectory:{tempdirectoryname}"))
-                configurations = Settings.FromFile<Configurations>(sr);
+                Settings.FromFile(configurations, sr);
 
             // Act
             configurations.GetCurrentLogstate(out string result, out bool fileLimitExceeded);
 
             // Assert
-            Assert.AreEqual(tempdirectoryname, Path.GetDirectoryName(result));
-            Assert.AreEqual(".log", Path.GetExtension(result));
+            Assert.AreEqual(Path.Combine(tempdirectoryname, $"log_{dateTimeProvider.UtcNow:yyyyMMdd_HHmmss}.log"), result);
             Assert.IsFalse(fileLimitExceeded);
         }
 
@@ -67,23 +71,24 @@ namespace Betty.NUnitIntegrationTest.Services
         {
             // Arrange
             string filename = Path.Combine(tempdirectoryname, "mylog.log");
-            
             using(StreamWriter sw = new StreamWriter(filename))
             {
                 sw.Write(new string('.', 250 * 1024));
             }
 
-            Configurations configurations;
+            FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
+            dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            IServiceProvider services = new ServiceCollection().AddSingleton<IDateTimeProvider>(dateTimeProvider).BuildServiceProvider();
+
+            Configurations configurations = new Configurations(services);
             using (StringReader sr = new StringReader($"LogDirectory:{tempdirectoryname}"))
-                configurations = Settings.FromFile<Configurations>(sr);
+                Settings.FromFile(configurations, sr);
 
             // Act
             configurations.GetCurrentLogstate(out string result, out bool fileLimitExceeded);
 
             // Assert
-            Assert.AreNotEqual(filename, result);
-            Assert.AreEqual(tempdirectoryname, Path.GetDirectoryName(result));
-            Assert.AreEqual(".log", Path.GetExtension(result));
+            Assert.AreEqual(Path.Combine(tempdirectoryname, $"log_{dateTimeProvider.UtcNow:yyyyMMdd_HHmmss}.log"), result);
             Assert.IsFalse(fileLimitExceeded);
         }
 
@@ -95,12 +100,12 @@ namespace Betty.NUnitIntegrationTest.Services
             string filename2 = Path.Combine(tempdirectoryname, "mylog2.log");
             File.Create(filename).Close();
             File.Create(filename2).Close();
-            Configurations configurations;
+            Configurations configurations = new Configurations();
             using (StringReader sr = new StringReader($"LogDirectory:{tempdirectoryname}\nMaxLogFiles:1"))
-                configurations = Settings.FromFile<Configurations>(sr);
+                Settings.FromFile(configurations, sr);
 
             // Act
-            configurations.GetCurrentLogstate(out string result, out bool fileLimitExceeded);
+            configurations.GetCurrentLogstate(out _, out bool fileLimitExceeded);
 
             // Assert
             Assert.IsTrue(fileLimitExceeded);
@@ -117,9 +122,9 @@ namespace Betty.NUnitIntegrationTest.Services
             File.SetCreationTimeUtc(filename, DateTime.UtcNow - new TimeSpan(0, 2, 0));
             File.SetCreationTimeUtc(filename2, DateTime.UtcNow - new TimeSpan(0, 1, 0));
 
-            Configurations configurations;
+            Configurations configurations = new Configurations();
             using (StringReader sr = new StringReader($"LogDirectory:{tempdirectoryname}"))
-                configurations = Settings.FromFile<Configurations>(sr);
+                Settings.FromFile(configurations, sr);
 
             // Act
             configurations.GetCurrentLogstate(out string result, out _);
@@ -136,9 +141,9 @@ namespace Betty.NUnitIntegrationTest.Services
             string filename2 = Path.Combine(tempdirectoryname, "Amylog2.log");
             File.Create(filename).Close();
             File.Create(filename2).Close();
-            Configurations configurations;
+            Configurations configurations = new Configurations();
             using (StringReader sr = new StringReader($"LogDirectory:{tempdirectoryname}"))
-                configurations = Settings.FromFile<Configurations>(sr);
+                Settings.FromFile(configurations, sr);
 
             // Act
             configurations.RemoveOldestLogfile();

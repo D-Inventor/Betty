@@ -27,11 +27,11 @@ namespace Betty.Utilities
                 database.Database.Migrate();
             }
 
-            Configurations configurations;
+            Configurations configurations = new Configurations();
             try
             {
                 // try to load the configuration
-                configurations = Settings.FromFile<Configurations>(Path.Combine(datapath, "Configurations.conf"));
+                Settings.FromFile(configurations, Path.Combine(datapath, "Configurations.conf"));
             }
             catch (FileNotFoundException)
             {
@@ -55,10 +55,17 @@ namespace Betty.Utilities
             };
 
             // create a service provider from services
-            return new ServiceCollection()
+            IServiceProvider services = new ServiceCollection()
                 .AddSingleton(configurations)
                 .AddSingleton(logger)
+                .AddTransient<BettyDB>()
                 .BuildServiceProvider();
+
+            // bind service provider to these services
+            configurations.Services = services;
+            logger.Services = services;
+
+            return services;
         }
     }
 }

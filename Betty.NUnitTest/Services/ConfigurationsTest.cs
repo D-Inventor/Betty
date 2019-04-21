@@ -13,9 +13,9 @@ namespace Betty.NUnitTest.Services
         {
             // Arrange
             string input = "LogDirectory:logfiles/betty";
-            Configurations configurations;
+            Configurations configurations = new Configurations();
             using (StringReader sr = new StringReader(input))
-                configurations = Settings.FromFile<Configurations>(sr);
+                Settings.FromFile(configurations, sr);
 
             // Act
             string result = configurations.LogDirectory;
@@ -30,9 +30,9 @@ namespace Betty.NUnitTest.Services
         {
             // Arrange
             string input = "LogDirectory:";
-            Configurations configurations;
+            Configurations configurations = new Configurations();
             using (StringReader sr = new StringReader(input))
-                configurations = Settings.FromFile<Configurations>(sr);
+                Settings.FromFile(configurations, sr);
 
             // Act
             string result = configurations.LogDirectory;

@@ -3,6 +3,9 @@ using System.Text;
 
 using Betty.Services;
 using System.IO;
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Betty.Utilities.DateTimeUtilities;
 
 namespace Betty.NUnitTest.Services
 {
@@ -13,7 +16,10 @@ namespace Betty.NUnitTest.Services
         {
             // arrange
             FakeStreamProvider streamProvider = new FakeStreamProvider();
-            Logger logger = new Logger
+            FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
+            dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            IServiceProvider services = new ServiceCollection().AddSingleton<IDateTimeProvider>(dateTimeProvider).BuildServiceProvider();
+            Logger logger = new Logger(services)
             {
                 StreamProvider = streamProvider,
                 LogSeverity = LogSeverity.Info
@@ -25,7 +31,7 @@ namespace Betty.NUnitTest.Services
 
             // assert
             string output = streamProvider.StringBuilder.ToString();
-            Assert.AreNotEqual(string.Empty, output);
+            Assert.AreEqual($"[{dateTimeProvider.UtcNow}][{LogSeverity.Warning.ToString().PadLeft(7)}] {"Test".PadLeft(20)}:{"DebugMessage"}{Environment.NewLine}", output);
         }
 
         [Test]
@@ -33,7 +39,10 @@ namespace Betty.NUnitTest.Services
         {
             // arrange
             FakeStreamProvider streamProvider = new FakeStreamProvider();
-            Logger logger = new Logger
+            FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
+            dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            IServiceProvider services = new ServiceCollection().AddSingleton<IDateTimeProvider>(dateTimeProvider).BuildServiceProvider();
+            Logger logger = new Logger(services)
             {
                 StreamProvider = streamProvider,
                 LogSeverity = LogSeverity.Warning
@@ -45,7 +54,7 @@ namespace Betty.NUnitTest.Services
 
             // assert
             string output = streamProvider.StringBuilder.ToString();
-            Assert.AreNotEqual(string.Empty, output);
+            Assert.AreEqual($"[{dateTimeProvider.UtcNow}][{LogSeverity.Warning.ToString().PadLeft(7)}] {"Test".PadLeft(20)}:{"DebugMessage"}{Environment.NewLine}", output);
         }
 
         [Test]

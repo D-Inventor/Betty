@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Betty.Utilities.DateTimeUtilities
 {
@@ -17,14 +18,17 @@ namespace Betty.Utilities.DateTimeUtilities
         private CancellationTokenSource cancellationTokenSource;
         private readonly object activationLocker = new object();
 
+        public IServiceProvider Services { get; set; }
+
         /// <summary>
         /// One should be able to create a new DateTimeEvent
         /// </summary>
-        public DateTimeEvent()
+        public DateTimeEvent(IServiceProvider services = null)
         {
             backgroundProcess = null;
             cancellationTokenSource = null;
             IsActive = false;
+            Services = services;
         }
 
         /// <summary>
@@ -53,9 +57,11 @@ namespace Betty.Utilities.DateTimeUtilities
             }
 
             // create and start the background process
+            // use a local copy of the token source so that during notification, the member token can be overwritten.
             cancellationTokenSource = new CancellationTokenSource();
+            var localTokenSource = cancellationTokenSource;
             backgroundProcess = new Task(() => { WaiterTask().Wait(); }, cancellationTokenSource.Token, TaskCreationOptions.LongRunning);
-            backgroundProcess.ContinueWith((_) => { cancellationTokenSource.Dispose(); });
+            backgroundProcess.ContinueWith((_) => { localTokenSource.Dispose(); });
             backgroundProcess.Start();
         }
 
@@ -64,10 +70,11 @@ namespace Betty.Utilities.DateTimeUtilities
         /// </summary>
         protected async Task WaiterTask()
         {
+            IDateTimeProvider dateTimeProvider = Services?.GetService<IDateTimeProvider>() ?? new DateTimeProvider();
             while (true)
             {
                 // stop waiting if the target time has passed
-                DateTime now = DateTime.UtcNow;
+                DateTime now = dateTimeProvider.UtcNow;
                 if(Target <= now) { break; }
 
                 // wait for the given time or the maximum amount of milliseconds if date is too far away
@@ -76,10 +83,10 @@ namespace Betty.Utilities.DateTimeUtilities
                 await Task.Delay((int)waittime);
             }
 
+            IsActive = false;
+
             // notify subscribers
             DateTimeReached(Target);
-
-            IsActive = false;
         }
 
         /// <summary>
