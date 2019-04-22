@@ -17,6 +17,9 @@ namespace Betty.Services
         [Group("Discord settings"), Default("YOUR SECRET TOKEN"), Description("The secret token for the bot to connect to discord")]
         public string Token { get; set; }
 
+        [Group("Discord settings"), Description("The user id of the owner of this bot")]
+        public ulong OwnerId { get; set; }
+
         [Group("Log settings"), Default(LogSeverity.Info), Description("Minimum severity for the message to be written to the log.\nPossible values: Debug | Info | Warning | Error")]
         public LogSeverity LogSeverity { get; set; }
 

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Betty.Services
 {
-    interface ILogger
+    public interface ILogger
     {
         void LogDebug(string source, object message);
         void LogInfo(string source, object message);

@@ -1,5 +1,6 @@
 ﻿using Betty.Database;
 using Betty.Services;
+using Betty.Utilities.DateTimeUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleSettings;
@@ -57,8 +58,11 @@ namespace Betty.Utilities
             // create a service provider from services
             IServiceProvider services = new ServiceCollection()
                 .AddSingleton(configurations)
-                .AddSingleton(logger)
+                .AddSingleton<ILogger>(logger)
+                .AddSingleton<DateTimeProvider>()
                 .AddTransient<BettyDB>()
+                .AddSingleton(s => new Agenda(s))
+                .AddSingleton(s => new Bot(s))
                 .BuildServiceProvider();
 
             // bind service provider to these services

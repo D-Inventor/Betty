@@ -7,6 +7,7 @@ using System;
 using System.IO;
 
 using Betty.Utilities;
+using System.Threading.Tasks;
 
 namespace Betty
 {
@@ -14,9 +15,15 @@ namespace Betty
     {
         static void Main()
         {
+            MainAsync().Wait();
+        }
+
+        static async Task MainAsync()
+        {
             IServiceProvider services = DependencyUtility.LoadServices();
-            if (services == null)
-                return;
+            if (services == null) { return; }
+
+            await services.GetRequiredService<Bot>().Run();
         }
     }
 }
