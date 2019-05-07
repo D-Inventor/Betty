@@ -15,7 +15,7 @@ namespace Betty
 {
     public class Bot
     {
-        private ManualResetEvent stopEvent;
+        private readonly ManualResetEvent stopEvent;
 
         public IServiceProvider Services { get; set; }
         public DiscordSocketClient Client { get; private set; }
@@ -25,6 +25,7 @@ namespace Betty
         {
             Services = services;
             Configurations configurations = Services.GetRequiredService<Configurations>();
+            Agenda agenda = Services.GetService<Agenda>();
 
             stopEvent = new ManualResetEvent(false);
 
@@ -44,6 +45,13 @@ namespace Betty
             // subscribe to events
             Client.Log += Client_Log;
             Client.Ready += Client_Ready;
+            if(agenda != null) { agenda.OnAppointmentDue += Agenda_OnAppointmentDue; }
+        }
+
+        private void Agenda_OnAppointmentDue(object sender, AppointmentEventArgs e)
+        {
+            ILogger logger = Services.GetService<ILogger>();
+            logger?.LogInfo("Bot", $"{e.Appointment.Title} is due");
         }
 
         private async Task Client_Ready()
