@@ -7,6 +7,6 @@ namespace Betty.NUnitTest.Services
 {
     public class LanguageTest
     {
-
+        
     }
 }

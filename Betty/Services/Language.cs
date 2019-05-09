@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
+using DsSimpleParser;
+
 namespace Betty.Services
 {
     public class Language
@@ -42,11 +44,20 @@ namespace Betty.Services
 
         public static string[] GetSentencesFromStream(TextReader input)
         {
-            string line, key = null;
-            while((line = input.ReadLine()) != null) //  read all the lines in the input
-            {
-                line = line.TrimStart();
-            }
+            Tokenizer tokenizer = new Tokenizer()
+                .Add(new Token("oBrace",        @"\{"))
+                .Add(new Token("cBrace",        @"\}"))
+                .Add(new Token("oSqBracket",    @"\["))
+                .Add(new Token("cSqBracket",    @"\]"))
+                .Add(new Token("doubleQuote",    "\""))
+                .Add(new Token("dot",           @"\."))
+                .Add(new Token("word",          @"[a-zA-Z0-9]+"))
+                .Add(new Token("escaped",       @"\\."))
+                .Add(new Token("ws",            @"\s+"));
+
+            string data = input.ReadToEnd();
+
+            TokenMatch[] tokens = tokenizer.Convert(data);
 
             throw new NotImplementedException();
         }

@@ -13,12 +13,15 @@ namespace DsSimpleParser
             Target = target;
         }
 
-        public override Result<InSymbolType> Parse(InputSymbols<InSymbolType> symbols)
+        public override IEnumerable<Result<InSymbolType>> Parse(InputSymbols<InSymbolType> symbols)
         {
             if (!symbols.Current.Equals(Target))
-                return new Result<InSymbolType>(false, null, symbols);
+            {
+                yield return new Result<InSymbolType>(false, null, symbols);
+                yield break;
+            }
 
-            return new Result<InSymbolType>(true, symbols.Symbols[symbols.Index++], symbols);
+            yield return new Result<InSymbolType>(true, symbols.Symbols[symbols.Index++], symbols);
         }
     }
 }

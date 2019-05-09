@@ -14,7 +14,10 @@ namespace DsSimpleParser.NUnitTest
             Symbol<char> parser = new Symbol<char>('H');
 
             // act
-            Result<char> result = parser.Parse(new InputSymbols<char>("Hello world".ToCharArray()));
+            IEnumerator<Result<char>> enumerator = parser.Parse(new InputSymbols<char>("Hello world".ToCharArray())).GetEnumerator();
+            enumerator.MoveNext();
+
+            Result<char> result = enumerator.Current;
 
             // assert
             Assert.IsTrue(result.Success);
@@ -29,7 +32,10 @@ namespace DsSimpleParser.NUnitTest
             Symbol<char> parser = new Symbol<char>('H');
 
             // act
-            Result<char> result = parser.Parse(new InputSymbols<char>("Bye world".ToCharArray()));
+            IEnumerator<Result<char>> enumerator = parser.Parse(new InputSymbols<char>("Bye world".ToCharArray())).GetEnumerator();
+            enumerator.MoveNext();
+
+            Result<char> result = enumerator.Current;
 
             // assert
             Assert.IsFalse(result.Success);
