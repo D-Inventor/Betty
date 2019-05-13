@@ -10,7 +10,7 @@ namespace DsSimpleParser
     /// </summary>
     public class Tokenizer
     {
-        List<Token> tokens;
+        readonly List<Token> tokens;
 
         public Tokenizer()
         {

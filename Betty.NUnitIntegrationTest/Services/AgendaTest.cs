@@ -35,8 +35,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // arrange
-                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-                dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0);
+                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+                {
+                    UtcNow = new DateTime(2019, 1, 1, 12, 0, 0)
+                };
                 IServiceProvider services = new ServiceCollection()
                     .AddTransient(x => new BettyDB(options))
                     .AddSingleton<IDateTimeProvider>(dateTimeProvider)
@@ -87,8 +89,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // arrange
-                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-                dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0);
+                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+                {
+                    UtcNow = new DateTime(2019, 1, 1, 12, 0, 0)
+                };
                 IServiceProvider services = new ServiceCollection()
                     .AddTransient(x => new BettyDB(options))
                     .AddSingleton<IDateTimeProvider>(dateTimeProvider)
@@ -369,8 +373,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // arrange
-                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-                dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+                {
+                    UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc)
+                };
                 IServiceProvider services = new ServiceCollection()
                     .AddTransient(x => new BettyDB(options))
                     .AddSingleton<IDateTimeProvider>(dateTimeProvider)
@@ -429,8 +435,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // arrange
-                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-                dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+                {
+                    UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc)
+                };
                 IServiceProvider services = new ServiceCollection()
                     .AddTransient(x => new BettyDB(options))
                     .AddSingleton<IDateTimeProvider>(dateTimeProvider)
@@ -489,8 +497,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // arrange
-                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-                dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+                {
+                    UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc)
+                };
                 IServiceProvider services = new ServiceCollection()
                     .AddTransient(x => new BettyDB(options))
                     .AddSingleton<IDateTimeProvider>(dateTimeProvider)
@@ -529,8 +539,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // arrange
-                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-                dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0);
+                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+                {
+                    UtcNow = new DateTime(2019, 1, 1, 12, 0, 0)
+                };
                 IServiceProvider services = new ServiceCollection()
                     .AddSingleton<IDateTimeProvider>(dateTimeProvider)
                     .AddTransient(x => new BettyDB(options))
@@ -576,8 +588,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // arrange
-                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-                dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+                {
+                    UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc)
+                };
                 IServiceProvider services = new ServiceCollection()
                     .AddTransient(x => new BettyDB(options))
                     .AddSingleton<IDateTimeProvider>(dateTimeProvider)
@@ -622,8 +636,10 @@ namespace Betty.NUnitIntegrationTest.Services
                 }
 
                 // arrange
-                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-                dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+                FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+                {
+                    UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc)
+                };
                 IServiceProvider services = new ServiceCollection()
                     .AddTransient(x => new BettyDB(options))
                     .AddSingleton<IDateTimeProvider>(dateTimeProvider)

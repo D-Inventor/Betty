@@ -20,5 +20,7 @@ namespace DsSimpleParser
         public InputSymbols<InSymbolType> Rest { get; }
         public bool Success { get; }
         public T ValueAs<T>() { return (T)Value; }
+
+        public static implicit operator bool(Result<InSymbolType> result) { return result.Success; }
     }
 }

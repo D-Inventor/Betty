@@ -16,8 +16,10 @@ namespace Betty.NUnitTest.Services
         {
             // arrange
             FakeStreamProvider streamProvider = new FakeStreamProvider();
-            FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-            dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+            {
+                UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc)
+            };
             IServiceProvider services = new ServiceCollection().AddSingleton<IDateTimeProvider>(dateTimeProvider).BuildServiceProvider();
             Logger logger = new Logger(services)
             {
@@ -39,8 +41,10 @@ namespace Betty.NUnitTest.Services
         {
             // arrange
             FakeStreamProvider streamProvider = new FakeStreamProvider();
-            FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();
-            dateTimeProvider.UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            FakeDateTimeProvider dateTimeProvider = new FakeDateTimeProvider
+            {
+                UtcNow = new DateTime(2019, 1, 1, 12, 0, 0, DateTimeKind.Utc)
+            };
             IServiceProvider services = new ServiceCollection().AddSingleton<IDateTimeProvider>(dateTimeProvider).BuildServiceProvider();
             Logger logger = new Logger(services)
             {
